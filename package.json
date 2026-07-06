@@ -1,0 +1,13 @@
+{
+  "name": "ameva-workstation-market-place",
+  "version": "1.0.0",
+  "description": "AMEVA Workstation Decentralized Marketplace Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
