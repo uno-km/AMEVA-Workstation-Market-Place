@@ -386,6 +386,17 @@ app.get('/api/plugins', (req, res) => {
       type: 'tool'
     },
     {
+      // [FEAT-MAPS] 구글 지도 탭 플러그인 — 내장 iframe 뷰로 직접 렌더링.
+      // AIPluginViews.tsx의 'google-maps' 케이스가 GoogleMapsView 컴포넌트를 내장 렌더링하므로
+      // 플러그인 scriptUrl은 참조되지 않으며, 탭 활성화 여부(installedPlugins)만 체크된다.
+      id: 'google-maps',
+      name: 'Google Maps',
+      description: '장소 검색 및 지도 탐색이 가능한 구글 지도 내장 뷰어 도구입니다. 현재 위치를 에디터 본문에 링크로 삽입할 수 있습니다.',
+      scriptUrl: `http://localhost:${PORT}/plugins/google-maps.js`,
+      version: '1.0.0',
+      type: 'tool'
+    },
+    {
       id: 'cloud-collab',
       name: 'Cloud Collaboration',
       description: '로컬 오프라인 제한을 뛰어넘어 보안 중앙 채널에서 팀원들과 원격 실시간 편집을 해금합니다.',
