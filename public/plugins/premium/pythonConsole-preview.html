@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>Python Sandbox Executor (Pro) Preview</title>
   <link rel="stylesheet" href="../preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
 </head>
 <body>
   <div class="preview-container">
@@ -12,33 +19,41 @@
       <div class="preview-title">
         <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
           Python Sandbox Executor (Pro)
-          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(236,72,153,0.2); color:var(--premium); font-weight:bold;">
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(236,72,153,0.15); color:var(--premium); font-weight:bold; border:1px solid rgba(236,72,153,0.3);">
             👑 Premium
           </span>
         </h2>
-        <p style="font-size:0.85rem;">AMEVA Workspace Simulation Engine</p>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
       </div>
     </div>
     <div class="preview-body">
-      <div class="mock-window">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         <div class="mock-titlebar">
           <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
           <div class="mock-title-text">Python Sandbox Executor (Pro) - Interactive Preview</div>
         </div>
-        <div class="mock-content">
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
           
-      <div style="width:100%; height:100%; background:#1e1e1e; color:#d4d4d4; font-family:monospace; padding:16px; overflow:hidden;">
-        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:12px;">
-          <span>Python 3.10.2 Sandbox</span>
-          <span style="color:#27c93f;">● Running</span>
-        </div>
-        <div style="color:#569cd6;">&gt;&gt;&gt; import pandas as pd</div>
-        <div style="color:#569cd6;">&gt;&gt;&gt; df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})</div>
-        <div style="color:#569cd6;">&gt;&gt;&gt; print(df.mean())</div>
-        <div style="color:#ce9178; margin-top:8px;">A    1.5<br/>B    3.5<br/>dtype: float64</div>
+      <div style="width:100%; height:100%; background:#000; color:#00ff00; font-family:'Courier New', Courier, monospace; padding:20px; overflow:hidden; font-size:15px; text-shadow:0 0 5px rgba(0,255,0,0.5);">
+        <div style="color:#888; margin-bottom:16px;">Python 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] on linux<br>Type "help", "copyright", "credits" or "license" for more information.</div>
+        <div><span style="color:#fff;">&gt;&gt;&gt;</span> import numpy as np</div>
+        <div><span style="color:#fff;">&gt;&gt;&gt;</span> import matplotlib.pyplot as plt</div>
+        <div><span style="color:#fff;">&gt;&gt;&gt;</span> x = np.linspace(0, 2*np.pi, 100)</div>
+        <div><span style="color:#fff;">&gt;&gt;&gt;</span> y = np.sin(x)</div>
+        <div><span style="color:#fff;">&gt;&gt;&gt;</span> print(f"Max value: {y.max():.2f}")</div>
+        <div style="color:#00ff00; margin-top:4px;">Max value: 1.00</div>
         <div style="margin-top:8px; display:flex; align-items:center;">
-          <span style="color:#569cd6;">&gt;&gt;&gt;&nbsp;</span>
-          <span class="pulse" style="width:8px; height:16px; background:#d4d4d4;"></span>
+          <span style="color:#fff;">&gt;&gt;&gt;&nbsp;</span>
+          <span class="pulse" style="width:10px; height:18px; background:#00ff00; display:inline-block;"></span>
+        </div>
+        <!-- ASCII art chart floating -->
+        <div class="pop-in" style="position:absolute; bottom:30px; right:30px; border:1px solid #00ff00; padding:10px; background:rgba(0,0,0,0.8); color:#00ff00; animation-delay:1s; white-space:pre;">
+   1.0 |    *** 
+       |  *     *
+   0.0 | *       *
+       |*---------*-----
+  -1.0 |           *   *
+       |             ***
         </div>
       </div>
     

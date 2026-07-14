@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>Kanban Board Preview</title>
   <link rel="stylesheet" href="../preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
 </head>
 <body>
   <div class="preview-container">
@@ -12,56 +19,90 @@
       <div class="preview-title">
         <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
           Kanban Board
-          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(236,72,153,0.2); color:var(--premium); font-weight:bold;">
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(236,72,153,0.15); color:var(--premium); font-weight:bold; border:1px solid rgba(236,72,153,0.3);">
             👑 Premium
           </span>
         </h2>
-        <p style="font-size:0.85rem;">AMEVA Workspace Simulation Engine</p>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
       </div>
     </div>
     <div class="preview-body">
-      <div class="mock-window">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         <div class="mock-titlebar">
           <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
           <div class="mock-title-text">Kanban Board - Interactive Preview</div>
         </div>
-        <div class="mock-content">
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
           
       <div style="width:100%; height:100%; display:flex; gap:16px; padding:16px; background:#f1f5f9; overflow-x:auto;">
         
-          <div style="flex:1; min-width:250px; background:#e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px;">
-            <div style="font-weight:bold; color:#334155; font-size:14px; text-transform:uppercase;">To Do</div>
-            <div class="pop-in" style="background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0s;">
-              <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Task 1</div>
-              <div class="shimmer" style="width:100%; height:8px; border-radius:4px; margin-bottom:4px;"></div>
-              <div class="shimmer" style="width:80%; height:8px; border-radius:4px;"></div>
+          <div style="flex:1; min-width:260px; background:#e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-weight:bold; color:#334155; font-size:14px; text-transform:uppercase; display:flex; justify-content:space-between;">
+              <span>To Do</span>
+              <span style="background:#cbd5e1; color:#475569; padding:2px 8px; border-radius:12px; font-size:11px;">1</span>
+            </div>
+            <div class="pop-in" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0s; border-left:4px solid #ef4444; cursor:grab;">
+              <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Design User Auth Flow</div>
+              <div class="shimmer" style="width:100%; height:6px; border-radius:3px; margin-bottom:6px; background:#f1f5f9;"></div>
+              <div class="shimmer" style="width:80%; height:6px; border-radius:3px; background:#f1f5f9;"></div>
+              <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="width:24px; height:24px; background:#3b82f6; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px;">JD</div>
+                <div style="font-size:11px; color:#94a3b8;">Today</div>
+              </div>
             </div>
             
+            <div style="margin-top:auto; padding:8px; border:2px dashed #cbd5e1; border-radius:6px; color:#64748b; text-align:center; font-size:12px; cursor:pointer;">
+              + Add Task
+            </div>
           </div>
         
-          <div style="flex:1; min-width:250px; background:#e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px;">
-            <div style="font-weight:bold; color:#334155; font-size:14px; text-transform:uppercase;">In Progress</div>
-            <div class="pop-in" style="background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0.2s;">
-              <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Task 2</div>
-              <div class="shimmer" style="width:100%; height:8px; border-radius:4px; margin-bottom:4px;"></div>
-              <div class="shimmer" style="width:80%; height:8px; border-radius:4px;"></div>
+          <div style="flex:1; min-width:260px; background:#e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-weight:bold; color:#334155; font-size:14px; text-transform:uppercase; display:flex; justify-content:space-between;">
+              <span>In Progress</span>
+              <span style="background:#cbd5e1; color:#475569; padding:2px 8px; border-radius:12px; font-size:11px;">2</span>
+            </div>
+            <div class="pop-in" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0.2s; border-left:4px solid #eab308; cursor:grab;">
+              <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Design User Auth Flow</div>
+              <div class="shimmer" style="width:100%; height:6px; border-radius:3px; margin-bottom:6px; background:#f1f5f9;"></div>
+              <div class="shimmer" style="width:80%; height:6px; border-radius:3px; background:#f1f5f9;"></div>
+              <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="width:24px; height:24px; background:#3b82f6; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px;">JD</div>
+                <div style="font-size:11px; color:#94a3b8;">Today</div>
+              </div>
             </div>
             
-              <div class="pop-in" style="background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0.5s;">
-                <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Task 3</div>
-                <div class="shimmer" style="width:100%; height:8px; border-radius:4px;"></div>
+              <div class="pop-in" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0.5s; border-left:4px solid #eab308; cursor:grab;">
+                <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Implement API endpoints</div>
+                <div class="shimmer" style="width:90%; height:6px; border-radius:3px; margin-bottom:6px; background:#f1f5f9;"></div>
+                <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="width:24px; height:24px; background:#ef4444; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px;">AK</div>
+                  <div style="font-size:11px; color:#ef4444;">Overdue</div>
+                </div>
               </div>
             
+            <div style="margin-top:auto; padding:8px; border:2px dashed #cbd5e1; border-radius:6px; color:#64748b; text-align:center; font-size:12px; cursor:pointer;">
+              + Add Task
+            </div>
           </div>
         
-          <div style="flex:1; min-width:250px; background:#e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px;">
-            <div style="font-weight:bold; color:#334155; font-size:14px; text-transform:uppercase;">Done</div>
-            <div class="pop-in" style="background:#fff; padding:12px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0.4s;">
-              <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Task 3</div>
-              <div class="shimmer" style="width:100%; height:8px; border-radius:4px; margin-bottom:4px;"></div>
-              <div class="shimmer" style="width:80%; height:8px; border-radius:4px;"></div>
+          <div style="flex:1; min-width:260px; background:#e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-weight:bold; color:#334155; font-size:14px; text-transform:uppercase; display:flex; justify-content:space-between;">
+              <span>Done</span>
+              <span style="background:#cbd5e1; color:#475569; padding:2px 8px; border-radius:12px; font-size:11px;">1</span>
+            </div>
+            <div class="pop-in" style="background:#fff; padding:16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); color:#0f172a; animation-delay:0.4s; border-left:4px solid #22c55e; cursor:grab;">
+              <div style="font-weight:600; font-size:14px; margin-bottom:8px;">Design User Auth Flow</div>
+              <div class="shimmer" style="width:100%; height:6px; border-radius:3px; margin-bottom:6px; background:#f1f5f9;"></div>
+              <div class="shimmer" style="width:80%; height:6px; border-radius:3px; background:#f1f5f9;"></div>
+              <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="width:24px; height:24px; background:#3b82f6; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px;">JD</div>
+                <div style="font-size:11px; color:#94a3b8;">Today</div>
+              </div>
             </div>
             
+            <div style="margin-top:auto; padding:8px; border:2px dashed #cbd5e1; border-radius:6px; color:#64748b; text-align:center; font-size:12px; cursor:pointer;">
+              + Add Task
+            </div>
           </div>
         
       </div>

@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>Minimap Preview</title>
   <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
 </head>
 <body>
   <div class="preview-container">
@@ -12,34 +19,52 @@
       <div class="preview-title">
         <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
           Minimap
-          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.2); color:var(--primary); font-weight:bold;">
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.15); color:var(--primary); font-weight:bold; border:1px solid rgba(59,130,246,0.3);">
             Standard
           </span>
         </h2>
-        <p style="font-size:0.85rem;">AMEVA Workspace Simulation Engine</p>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
       </div>
     </div>
     <div class="preview-body">
-      <div class="mock-window">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         <div class="mock-titlebar">
           <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
           <div class="mock-title-text">Minimap - Interactive Preview</div>
         </div>
-        <div class="mock-content">
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
           
-      <div style="width:100%; height:100%; background:#e5e3df; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:20px; left:20px; width:300px; height:48px; background:#fff; border-radius:24px; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; padding:0 16px;">
-          <span style="color:#666;">Search places...</span>
+      <div style="width:100%; height:100%; display:flex; background:#1e1e1e; color:#d4d4d4; font-family:'Consolas', monospace;">
+        <div style="flex:1; padding:24px; font-size:14px; line-height:1.6; overflow:hidden;">
+          <div style="color:#c586c0;">import</div> <div style="color:#4ec9b0; display:inline;">React</div> <div style="color:#c586c0; display:inline;">from</div> <div style="color:#ce9178; display:inline;">'react'</div>;<br/>
+          <br/>
+          <div style="color:#569cd6; display:inline;">export function</div> <div style="color:#dcdcaa; display:inline;">MarketplaceModal</div>() {<br/>
+          &nbsp;&nbsp;<div style="color:#569cd6; display:inline;">const</div> [isOpen, setIsOpen] = <div style="color:#dcdcaa; display:inline;">useState</div>(<div style="color:#569cd6; display:inline;">false</div>);<br/>
+          <br/>
+          &nbsp;&nbsp;<div style="color:#6a9955;">// Render the modal UI</div><br/>
+          &nbsp;&nbsp;<div style="color:#c586c0; display:inline;">return</div> (<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;<div style="color:#569cd6; display:inline;">div</div> <div style="color:#9cdcfe; display:inline;">className</div>=<div style="color:#ce9178; display:inline;">"modal-backdrop"</div>&gt;<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<div style="color:#569cd6; display:inline;">h1</div>&gt;Plugins&lt;/<div style="color:#569cd6; display:inline;">h1</div>&gt;<br/>
+          &nbsp;&nbsp;&nbsp;&nbsp;&lt;/<div style="color:#569cd6; display:inline;">div</div>&gt;<br/>
+          &nbsp;&nbsp;);<br/>
+          }<br/>
+          <div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div><div class="shimmer" style="width:60%; height:8px; margin:12px 0; border-radius:2px; background:rgba(255,255,255,0.05);"></div>
         </div>
-        <div class="float-anim" style="position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);">
-          <div style="width:30px; height:40px; background:#ea4335; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; justify-content:center; align-items:center; box-shadow:2px 2px 6px rgba(0,0,0,0.3);">
-            <div style="width:12px; height:12px; background:#fff; border-radius:50%;"></div>
-          </div>
+        <div style="width:100px; background:#1e1e1e; border-left:1px solid #333; position:relative; overflow:hidden; padding:4px 8px;">
+          <!-- Viewport highlight -->
+          <div class="float-anim" style="position:absolute; top:20px; left:0; width:100%; height:60px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); z-index:2; cursor:pointer;"></div>
+          <!-- Code blocks representation -->
+          <div style="width:40%; height:2px; background:#c586c0; margin:4px 0;"></div>
+          <div style="width:80%; height:2px; background:#569cd6; margin:8px 0;"></div>
+          <div style="width:60%; height:2px; background:#dcdcaa; margin:4px 0 4px 10px;"></div>
+          <div style="width:50%; height:2px; background:#6a9955; margin:8px 0 4px 10px;"></div>
+          <div style="width:30%; height:2px; background:#c586c0; margin:4px 0 4px 10px;"></div>
+          <div style="width:70%; height:2px; background:#ce9178; margin:4px 0 4px 20px;"></div>
+          <div style="width:40%; height:2px; background:#569cd6; margin:4px 0 4px 20px;"></div>
+          <div style="width:30%; height:2px; background:#569cd6; margin:4px 0 8px 10px;"></div>
+          <div style="width:10%; height:2px; background:#d4d4d4; margin:4px 0;"></div>
+          <div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div><div style="width:45.709254129211935%; height:2px; margin:4px 0; background:rgba(255,255,255,0.2);"></div>
         </div>
-        <svg style="width:100%; height:100%; opacity:0.2;">
-          <path d="M0,100 Q150,50 300,150 T600,200 T900,100" stroke="#000" stroke-width="4" fill="none"/>
-          <path d="M100,0 L150,400 M300,0 L250,400" stroke="#000" stroke-width="6" fill="none"/>
-        </svg>
       </div>
     
         </div>

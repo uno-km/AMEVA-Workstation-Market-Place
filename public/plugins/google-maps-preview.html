@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>Google Maps Preview</title>
   <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
 </head>
 <body>
   <div class="preview-container">
@@ -12,34 +19,72 @@
       <div class="preview-title">
         <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
           Google Maps
-          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.2); color:var(--primary); font-weight:bold;">
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.15); color:var(--primary); font-weight:bold; border:1px solid rgba(59,130,246,0.3);">
             Standard
           </span>
         </h2>
-        <p style="font-size:0.85rem;">AMEVA Workspace Simulation Engine</p>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
       </div>
     </div>
     <div class="preview-body">
-      <div class="mock-window">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
         <div class="mock-titlebar">
           <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
           <div class="mock-title-text">Google Maps - Interactive Preview</div>
         </div>
-        <div class="mock-content">
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
           
-      <div style="width:100%; height:100%; background:#e5e3df; position:relative; overflow:hidden;">
-        <div style="position:absolute; top:20px; left:20px; width:300px; height:48px; background:#fff; border-radius:24px; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; padding:0 16px;">
-          <span style="color:#666;">Search places...</span>
-        </div>
-        <div class="float-anim" style="position:absolute; top:40%; left:50%; transform:translate(-50%, -50%);">
-          <div style="width:30px; height:40px; background:#ea4335; border-radius:50% 50% 50% 0; transform:rotate(-45deg); display:flex; justify-content:center; align-items:center; box-shadow:2px 2px 6px rgba(0,0,0,0.3);">
-            <div style="width:12px; height:12px; background:#fff; border-radius:50%;"></div>
+      <div style="width:100%; height:100%; background:#fff; display:flex; flex-direction:column; font-family:sans-serif;">
+        <!-- Browser Chrome -->
+        <div style="height:48px; background:#f1f5f9; display:flex; align-items:center; padding:0 16px; gap:16px; border-bottom:1px solid #cbd5e1;">
+          <div style="display:flex; gap:8px;">
+            <div style="width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#64748b; font-weight:bold; cursor:pointer;">←</div>
+            <div style="width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#cbd5e1; font-weight:bold;">→</div>
+            <div style="width:24px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#64748b; font-weight:bold; cursor:pointer;">↻</div>
+          </div>
+          <div style="flex:1; max-width:600px; background:#fff; height:32px; border-radius:16px; border:1px solid #cbd5e1; display:flex; align-items:center; padding:0 16px; color:#334155; font-size:14px; gap:8px; box-shadow:inset 0 1px 3px rgba(0,0,0,0.05);">
+            <span style="color:#94a3b8;">🔒</span> https://search.example.com/?q=AI+Agents
           </div>
         </div>
-        <svg style="width:100%; height:100%; opacity:0.2;">
-          <path d="M0,100 Q150,50 300,150 T600,200 T900,100" stroke="#000" stroke-width="4" fill="none"/>
-          <path d="M100,0 L150,400 M300,0 L250,400" stroke="#000" stroke-width="6" fill="none"/>
-        </svg>
+        
+        <!-- Search Page Content -->
+        <div style="flex:1; padding:32px 10%; background:#fff; overflow-y:auto; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; gap:24px; margin-bottom:32px; border-bottom:1px solid #e2e8f0; padding-bottom:16px;">
+            <div style="font-size:32px; font-weight:900; color:#4285f4; letter-spacing:-1px;">Google</div>
+            <div style="flex:1; max-width:500px; height:44px; background:#fff; border-radius:22px; border:1px solid #dfe1e5; display:flex; align-items:center; padding:0 20px; box-shadow:0 1px 6px rgba(32,33,36,.28);">
+              <span style="flex:1; font-size:16px; color:#000;">AI Agents</span>
+              <span style="color:#4285f4; font-size:20px;">🔍</span>
+            </div>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:32px;">
+            
+              <div class="pop-in" style="animation-delay:0.1s;">
+                <div style="font-size:14px; color:#202124; margin-bottom:4px;">https://example1.com &gt; ai &gt; agents</div>
+                <div style="font-size:20px; color:#1a0dab; text-decoration:underline; margin-bottom:8px; cursor:pointer;">Understanding Autonomous AI Agents in 2024</div>
+                <div style="font-size:14px; color:#4d5156; line-height:1.58; max-width:680px;">
+                  An autonomous agent is an AI program that can make decisions and take actions to achieve a specific goal without continuous human intervention...
+                </div>
+              </div>
+            
+              <div class="pop-in" style="animation-delay:0.2s;">
+                <div style="font-size:14px; color:#202124; margin-bottom:4px;">https://example2.com &gt; ai &gt; agents</div>
+                <div style="font-size:20px; color:#1a0dab; text-decoration:underline; margin-bottom:8px; cursor:pointer;">Understanding Autonomous AI Agents in 2024</div>
+                <div style="font-size:14px; color:#4d5156; line-height:1.58; max-width:680px;">
+                  An autonomous agent is an AI program that can make decisions and take actions to achieve a specific goal without continuous human intervention...
+                </div>
+              </div>
+            
+              <div class="pop-in" style="animation-delay:0.30000000000000004s;">
+                <div style="font-size:14px; color:#202124; margin-bottom:4px;">https://example3.com &gt; ai &gt; agents</div>
+                <div style="font-size:20px; color:#1a0dab; text-decoration:underline; margin-bottom:8px; cursor:pointer;">Understanding Autonomous AI Agents in 2024</div>
+                <div style="font-size:14px; color:#4d5156; line-height:1.58; max-width:680px;">
+                  An autonomous agent is an AI program that can make decisions and take actions to achieve a specific goal without continuous human intervention...
+                </div>
+              </div>
+            
+          </div>
+        </div>
       </div>
     
         </div>
