@@ -10,6 +10,8 @@ const PORT = 3010;
 app.use(cors());
 app.use(express.json());
 
+// 마켓플레이스 스토어프론트 웹 렌더링을 위한 public 정적 서빙
+app.use(express.static(path.join(__dirname, 'public')));
 app.use('/plugins', express.static(path.join(__dirname, 'public/plugins')));
 
 // 한국 주요 대표 인기 주식 및 ETF 한글-티커 매핑 사전
