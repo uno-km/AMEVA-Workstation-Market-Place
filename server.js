@@ -273,6 +273,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Calculator',
       description: '문서 작성 중 즉석으로 계산할 수 있는 확장 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/calculator.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/calculator-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -281,6 +282,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Minimap',
       description: '에디터 우측에 실시간 텍스트 미니어처 미니맵을 활성화합니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/minimap.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/minimap-preview.html`,
       version: '1.0.0',
       type: 'feature'
     },
@@ -289,6 +291,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Outline',
       description: '문서의 제목 구조(TOC) 트리 네비게이션 탭을 활성화합니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/outline.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/outline-preview.html`,
       version: '1.0.0',
       type: 'feature'
     },
@@ -297,6 +300,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Rich Styling',
       description: '인라인 글씨 크기 조절 및 다양한 한글/영문 폰트 서식 변경 툴바를 활성화합니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/rich-styling.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/rich-styling-preview.html`,
       version: '1.0.0',
       type: 'feature'
     },
@@ -305,6 +309,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Drawing Board',
       description: '문서 중간에 Excalidraw 기반 화이트보드 드로잉판을 추가하여 그림을 그릴 수 있게 해줍니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/drawing-board.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/drawing-board-preview.html`,
       version: '1.0.0',
       type: 'feature'
     },
@@ -313,6 +318,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Finance & Exchange',
       description: '실시간 가상 주식 시세, 주요국 금리 현황, 베트남(VND) 포함 다자간 환율 양방향 변환 대시보드 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/premium/FinanceDashboardView.tsx`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/finance-dashboard-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -321,6 +327,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'YouTube Player',
       description: '문서 작업 중 유튜브 비디오를 실시간 시청 및 PiP 팝업 모드로 전환할 수 있는 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/youtube.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/youtube-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -329,6 +336,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Naver Portal',
       description: '임시 프라이버시 세션으로 안전하게 네이버 포털 검색 및 로그인을 지원하는 웹 뷰어 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/naver.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/naver-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -337,6 +345,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Google Search',
       description: '임시 세션으로 검색 내역을 남기지 않고 즉석 구글 검색을 활용하는 안전 웹 뷰어 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/google.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/google-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -345,6 +354,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Calendar & Scheduler',
       description: '문서 일정과 연동 가능한 나만의 미니 스마트 달력 스케줄러 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/calendar.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/calendar-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -353,6 +363,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Google Drive Sync',
       description: '작성 중인 마크다운 문서를 구글 드라이브 클라우드에 다이렉트 업로드 및 백업 동기화하는 클라우드 연동 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/google-drive.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/google-drive-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -361,6 +372,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Google Maps',
       description: '장소 검색 및 지도 탐색이 가능한 구글 지도 내장 뷰어 도구입니다. 현재 위치를 에디터 본문에 링크로 삽입할 수 있습니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/premium/GoogleMapsView.tsx`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/google-maps-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -369,6 +381,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Cloud Collaboration',
       description: '로컬 오프라인 제한을 뛰어넘어 보안 중앙 채널에서 팀원들과 원격 실시간 편집을 해금합니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/cloud-collab.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/cloud-collab-preview.html`,
       version: '1.0.0',
       type: 'collab'
     }
@@ -386,6 +399,7 @@ app.get('/api/plugins', (req, res) => {
             name: id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
             description: `마켓플레이스 동적 제공 플러그인: ${id}`,
             scriptUrl: `http://localhost:${PORT}/plugins/${file}`,
+            previewUrl: `http://localhost:${PORT}/plugins/${id}-preview.html`,
             version: '1.0.0',
             type: 'feature'
           });
@@ -404,6 +418,7 @@ app.get('/api/plugins', (req, res) => {
             name: id.split(/(?=[A-Z])/).join(' '),
             description: `프리미엄 플러그인: ${id}`,
             scriptUrl: `http://localhost:${PORT}/plugins/premium/${file}`,
+            previewUrl: `http://localhost:${PORT}/plugins/premium/${id}-preview.html`,
             version: '1.0.0',
             type: 'premium'
           });

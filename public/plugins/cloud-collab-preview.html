@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Cloud Collab Preview</title>
+  <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    @keyframes float { 0% {transform:translateY(0);} 50% {transform:translateY(-15px);} 100% {transform:translateY(0);} }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="preview-header">
+      <img src="https://ui-avatars.com/api/?name=Cloud%20Collab&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
+      <div class="preview-title">
+        <h2>Cloud Collab <span style="font-size:12px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.2); color:var(--primary); vertical-align:middle; margin-left:8px;">Standard</span></h2>
+        <p>실제 작동 화면 미리보기 (Mockup Simulation)</p>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="mock-window">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+        </div>
+        <div class="mock-content">
+          
+      <div style="position:relative; width:100%; height:100%;">
+        <div style="position:absolute; top:20%; left:30%; padding:8px 16px; background:var(--primary); color:#fff; border-radius:20px; font-size:14px; box-shadow:0 4px 12px rgba(59,130,246,0.5); animation: float 3s ease-in-out infinite;">User A Cursor</div>
+        <div style="position:absolute; bottom:30%; right:20%; padding:8px 16px; background:var(--premium); color:#fff; border-radius:20px; font-size:14px; box-shadow:0 4px 12px rgba(236,72,153,0.5); animation: float 4s ease-in-out infinite reverse;">User B Cursor</div>
+      </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
