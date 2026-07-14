@@ -65,34 +65,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const iconUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(plugin.name)}&background=random&color=fff&size=128&font-size=0.4&bold=true`;
       
       // Ensure previewUrl is available. If not, fallback.
-      const previewUrl = plugin.previewUrl || \`/plugins/\${isPremium ? 'premium/' : ''}\${plugin.id}-preview.html\`;
+      const previewUrl = plugin.previewUrl || `/plugins/${isPremium ? 'premium/' : ''}${plugin.id}-preview.html`;
 
       const card = document.createElement('div');
       card.className = 'plugin-card';
       
-      card.innerHTML = \`
+      card.innerHTML = `
         <div class="card-header">
           <div class="icon-wrapper">
-            <img src="\${iconUrl}" alt="\${plugin.name} icon">
+            <img src="${iconUrl}" alt="${plugin.name} icon">
           </div>
           <div class="title-wrap">
-            <h4>\${plugin.name}</h4>
-            <span class="version">v\${plugin.version || '1.0.0'}</span>
+            <h4>${plugin.name}</h4>
+            <span class="version">v${plugin.version || '1.0.0'}</span>
           </div>
         </div>
-        <p class="description">\${plugin.description}</p>
+        <p class="description">${plugin.description}</p>
         <div class="card-footer" style="flex-wrap: wrap; gap: 8px;">
-          <span class="type-tag">\${plugin.type}</span>
+          <span class="type-tag">${plugin.type}</span>
           <div style="display:flex; gap:8px; margin-left:auto;">
-            <button class="install-btn" style="background:rgba(255,255,255,0.1); color:#fff;" onclick="window.openPreview('\${previewUrl}')">
+            <button class="install-btn" style="background:rgba(255,255,255,0.1); color:#fff;" onclick="window.openPreview('${previewUrl}')">
               👁️ Preview
             </button>
-            <button class="install-btn \${isPremium ? 'premium' : ''}" onclick="alert('\${plugin.name} 클라우드 스트리밍이 워크스테이션으로 시작됩니다!')">
-              \${isPremium ? 'Activate' : 'Install'}
+            <button class="install-btn ${isPremium ? 'premium' : ''}" onclick="alert('${plugin.name} 클라우드 스트리밍이 워크스테이션으로 시작됩니다!')">
+              ${isPremium ? 'Activate' : 'Install'}
             </button>
           </div>
         </div>
-      \`;
+      `;
 
       if (isPremium) {
         premiumGrid.appendChild(card);
