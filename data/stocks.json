@@ -1,0 +1,15 @@
+[
+  { "keywords": ["삼성", "삼성전자", "samsung"], "symbol": "005930.KS", "name": "삼성전자 (Samsung Electronics)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["하이닉스", "sk하이닉스", "skhynix"], "symbol": "000660.KS", "name": "SK하이닉스 (SK Hynix)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["현대차", "현대자동차", "hyundai"], "symbol": "005380.KS", "name": "현대자동차 (Hyundai Motor)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["네이버", "naver"], "symbol": "035420.KS", "name": "NAVER (네이버)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["카카오", "kakao"], "symbol": "035720.KS", "name": "카카오 (Kakao)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["에코프로", "ecopro"], "symbol": "086520.KQ", "name": "에코프로 (Ecopro)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["에코프로비엠", "ecoprobm"], "symbol": "247540.KQ", "name": "에코프로비엠 (Ecopro BM)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["셀트리온", "celltrion"], "symbol": "068270.KS", "name": "셀트리온 (Celltrion)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["알테오젠", "alteogen"], "symbol": "191170.KQ", "name": "알테오젠 (Alteogen)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["기아", "kia"], "symbol": "000270.KS", "name": "기아 (Kia)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["포스코", "포스코홀딩스", "posco"], "symbol": "005490.KS", "name": "POSCO홀딩스 (POSCO Holdings)", "type": "EQUITY", "exchange": "KSC" },
+  { "keywords": ["코덱스", "kodex", "kodex200"], "symbol": "069500.KS", "name": "KODEX 200 (ETF)", "type": "ETF", "exchange": "KSC" },
+  { "keywords": ["타이거", "tiger", "tiger미국"], "symbol": "360750.KS", "name": "TIGER 미국S&P500 (ETF)", "type": "ETF", "exchange": "KSC" }
+]

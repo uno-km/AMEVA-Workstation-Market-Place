@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const yahooFinance = require('yahoo-finance2').default;
 
 const app = express();
 const PORT = 3010;
@@ -11,21 +13,7 @@ app.use(express.json());
 app.use('/plugins', express.static(path.join(__dirname, 'public/plugins')));
 
 // 한국 주요 대표 인기 주식 및 ETF 한글-티커 매핑 사전
-const KOREAN_STOCK_DICTIONARY = [
-  { keywords: ['삼성', '삼성전자', 'samsung'], symbol: '005930.KS', name: '삼성전자 (Samsung Electronics)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['하이닉스', 'sk하이닉스', 'skhynix'], symbol: '000660.KS', name: 'SK하이닉스 (SK Hynix)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['현대차', '현대자동차', 'hyundai'], symbol: '005380.KS', name: '현대자동차 (Hyundai Motor)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['네이버', 'naver'], symbol: '035420.KS', name: 'NAVER (네이버)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['카카오', 'kakao'], symbol: '035720.KS', name: '카카오 (Kakao)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['에코프로', 'ecopro'], symbol: '086520.KQ', name: '에코프로 (Ecopro)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['에코프로비엠', 'ecoprobm'], symbol: '247540.KQ', name: '에코프로비엠 (Ecopro BM)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['셀트리온', 'celltrion'], symbol: '068270.KS', name: '셀트리온 (Celltrion)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['알테오젠', 'alteogen'], symbol: '191170.KQ', name: '알테오젠 (Alteogen)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['기아', 'kia'], symbol: '000270.KS', name: '기아 (Kia)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['포스코', '포스코홀딩스', 'posco'], symbol: '005490.KS', name: 'POSCO홀딩스 (POSCO Holdings)', type: 'EQUITY', exchange: 'KSC' },
-  { keywords: ['코덱스', 'kodex', 'kodex200'], symbol: '069500.KS', name: 'KODEX 200 (ETF)', type: 'ETF', exchange: 'KSC' },
-  { keywords: ['타이거', 'tiger', 'tiger미국'], symbol: '360750.KS', name: 'TIGER 미국S&P500 (ETF)', type: 'ETF', exchange: 'KSC' }
-];
+const KOREAN_STOCK_DICTIONARY = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/stocks.json'), 'utf8'));
 
 // 싱글 플라이트 병합 및 인메모리 캐시 변수 정의
 const stockCache = new Map();
@@ -36,28 +24,19 @@ const CACHE_TTL = 30000; // 30초 TTL 캐시
 let exchangeCache = { timestamp: 0, data: null };
 let inFlightExchange = null;
 
-// 야후 파이낸스 봇 차단 우회용 User-Agent 및 다국어 언어 헤더 인젝션 조회 프록시 헬퍼
+// 야후 파이낸스 봇 차단 우회용 User-Agent 제거 및 yahoo-finance2 공식 모듈 도입
 async function fetchYahooStock(ticker) {
   try {
-    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-      }
-    });
-    if (!res.ok) throw new Error(`Yahoo API error for ${ticker} status: ${res.status}`);
-    const data = await res.json();
-    const result = data?.chart?.result?.[0];
+    const result = await yahooFinance.quote(ticker);
     if (!result) return null;
     
-    const price = result.meta.regularMarketPrice;
-    const prevClose = result.meta.chartPreviousClose;
+    const price = result.regularMarketPrice;
+    const prevClose = result.regularMarketPreviousClose;
     const changePercent = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
     
     // 만약 한글 매핑 사전에 들어있는 종목이라면 친절하게 한글 사명을 우선 매핑 출력
     const matched = KOREAN_STOCK_DICTIONARY.find(item => item.symbol === ticker);
-    const shortName = matched ? matched.name : (result.meta.symbol || ticker);
+    const shortName = matched ? matched.name : (result.symbol || ticker);
     
     return {
       ticker,
@@ -220,27 +199,16 @@ app.get('/api/finance/search', async (req, res) => {
   });
 
   try {
-    // 2단계: 야후 파이낸스 실시간 영문/티커 API 동시 쿼리 조회
-    // 만약 한글 쿼리일 경우 야후 API는 거절당할 수 있으므로, 매핑된 영문 쿼리로 보정하여 질의
+    // 2단계: 야후 파이낸스 실시간 영문/티커 API 동시 쿼리 조회 (yahoo-finance2 라이브러리 사용)
     let apiQuery = query;
     if (matchedList.length > 0) {
-      // 매핑된 첫 번째 종목의 키워드 중 영문명을 추출하여 보정 질의
       const engKw = KOREAN_STOCK_DICTIONARY.find(item => item.symbol === matchedList[0].symbol)?.keywords.find(kw => /^[a-zA-Z\s]+$/.test(kw));
       if (engKw) apiQuery = engKw;
     }
 
-    const searchUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(apiQuery)}`;
-    const response = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      const apiQuotes = (data.quotes || [])
+    const searchResults = await yahooFinance.search(apiQuery);
+    if (searchResults && searchResults.quotes) {
+      const apiQuotes = searchResults.quotes
         .filter(q => ['EQUITY', 'ETF', 'INDEX'].includes(q.quoteType))
         .map(q => ({
           symbol: q.symbol,
@@ -294,9 +262,9 @@ app.get('/api/finance/stock-detail', async (req, res) => {
   }
 });
 
-// 제공하는 마켓플레이스 플러그인 목록 API
+// 제공하는 마켓플레이스 플러그인 목록 API (동적 파일 읽기로 리팩토링)
 app.get('/api/plugins', (req, res) => {
-  res.json([
+  const plugins = [
     {
       id: 'calculator',
       name: 'Calculator',
@@ -341,7 +309,7 @@ app.get('/api/plugins', (req, res) => {
       id: 'finance-dashboard',
       name: 'Finance & Exchange',
       description: '실시간 가상 주식 시세, 주요국 금리 현황, 베트남(VND) 포함 다자간 환율 양방향 변환 대시보드 도구입니다.',
-      scriptUrl: `http://localhost:${PORT}/plugins/finance-dashboard.js`,
+      scriptUrl: `http://localhost:${PORT}/plugins/premium/FinanceDashboardView.tsx`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -386,13 +354,10 @@ app.get('/api/plugins', (req, res) => {
       type: 'tool'
     },
     {
-      // [FEAT-MAPS] 구글 지도 탭 플러그인 — 내장 iframe 뷰로 직접 렌더링.
-      // AIPluginViews.tsx의 'google-maps' 케이스가 GoogleMapsView 컴포넌트를 내장 렌더링하므로
-      // 플러그인 scriptUrl은 참조되지 않으며, 탭 활성화 여부(installedPlugins)만 체크된다.
       id: 'google-maps',
       name: 'Google Maps',
       description: '장소 검색 및 지도 탐색이 가능한 구글 지도 내장 뷰어 도구입니다. 현재 위치를 에디터 본문에 링크로 삽입할 수 있습니다.',
-      scriptUrl: `http://localhost:${PORT}/plugins/google-maps.js`,
+      scriptUrl: `http://localhost:${PORT}/plugins/premium/GoogleMapsView.tsx`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -404,7 +369,49 @@ app.get('/api/plugins', (req, res) => {
       version: '1.0.0',
       type: 'collab'
     }
-  ]);
+  ];
+
+  try {
+    const pluginsDir = path.join(__dirname, 'public/plugins');
+    if (fs.existsSync(pluginsDir)) {
+      const files = fs.readdirSync(pluginsDir);
+      files.filter(file => file.endsWith('.js')).forEach(file => {
+        const id = file.replace('.js', '');
+        if (!plugins.find(p => p.id === id)) {
+          plugins.push({
+            id,
+            name: id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            description: `마켓플레이스 동적 제공 플러그인: ${id}`,
+            scriptUrl: `http://localhost:${PORT}/plugins/${file}`,
+            version: '1.0.0',
+            type: 'feature'
+          });
+        }
+      });
+    }
+
+    const premiumDir = path.join(__dirname, 'public/plugins/premium');
+    if (fs.existsSync(premiumDir)) {
+      const pfiles = fs.readdirSync(premiumDir);
+      pfiles.filter(file => file.endsWith('.tsx')).forEach(file => {
+        const id = file.replace('.tsx', '');
+        if (!plugins.find(p => p.scriptUrl.includes(file))) {
+          plugins.push({
+            id,
+            name: id.split(/(?=[A-Z])/).join(' '),
+            description: `프리미엄 플러그인: ${id}`,
+            scriptUrl: `http://localhost:${PORT}/plugins/premium/${file}`,
+            version: '1.0.0',
+            type: 'premium'
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Failed to read plugins directory', err);
+  }
+
+  res.json(plugins);
 });
 
 app.listen(PORT, () => {
