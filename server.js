@@ -384,6 +384,33 @@ app.get('/api/plugins', (req, res) => {
       previewUrl: `http://localhost:${PORT}/plugins/cloud-collab-preview.html`,
       version: '1.0.0',
       type: 'collab'
+    },
+    {
+      id: 'webSearch',
+      name: 'DuckDuckGo Web Search API',
+      description: 'AMEVA 내부에서 곧바로 DuckDuckGo 프로 검색 API를 연동하여 인터넷 최신 정보를 가져옵니다.',
+      scriptUrl: `http://localhost:${PORT}/plugins/premium/webSearch.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/webSearch-preview.html`,
+      version: '1.0.0',
+      type: 'premium'
+    },
+    {
+      id: 'pythonConsole',
+      name: 'Python Sandbox Executor',
+      description: '마크다운 환경 내에서 안전한 파이썬 샌드박스를 구동하여 데이터 분석 및 코드를 실행합니다.',
+      scriptUrl: `http://localhost:${PORT}/plugins/premium/pythonConsole.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/pythonConsole-preview.html`,
+      version: '1.0.0',
+      type: 'premium'
+    },
+    {
+      id: 'requestQueue',
+      name: 'Sequential Request Queue',
+      description: '여러 API 호출을 순차적이고 안정적으로 처리하는 분산 큐 시스템입니다.',
+      scriptUrl: `http://localhost:${PORT}/plugins/premium/requestQueue.js`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/requestQueue-preview.html`,
+      version: '1.0.0',
+      type: 'premium'
     }
   ];
 

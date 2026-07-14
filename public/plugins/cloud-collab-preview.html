@@ -4,29 +4,40 @@
   <meta charset="UTF-8">
   <title>Cloud Collab Preview</title>
   <link rel="stylesheet" href="preview-shared.css">
-  <style>
-    @keyframes float { 0% {transform:translateY(0);} 50% {transform:translateY(-15px);} 100% {transform:translateY(0);} }
-  </style>
 </head>
 <body>
   <div class="preview-container">
     <div class="preview-header">
       <img src="https://ui-avatars.com/api/?name=Cloud%20Collab&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
       <div class="preview-title">
-        <h2>Cloud Collab <span style="font-size:12px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.2); color:var(--primary); vertical-align:middle; margin-left:8px;">Standard</span></h2>
-        <p>실제 작동 화면 미리보기 (Mockup Simulation)</p>
+        <h2>Cloud Collab <span style="font-size:12px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.2); color:var(--primary); vertical-align:middle; margin-left:12px;">Standard</span></h2>
+        <p>AMEVA Workspace Simulation Engine</p>
       </div>
     </div>
     <div class="preview-body">
       <div class="mock-window">
         <div class="mock-titlebar">
           <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+          <div class="mock-title-text">Cloud Collab - Interactive Preview</div>
         </div>
         <div class="mock-content">
           
-      <div style="position:relative; width:100%; height:100%;">
-        <div style="position:absolute; top:20%; left:30%; padding:8px 16px; background:var(--primary); color:#fff; border-radius:20px; font-size:14px; box-shadow:0 4px 12px rgba(59,130,246,0.5); animation: float 3s ease-in-out infinite;">User A Cursor</div>
-        <div style="position:absolute; bottom:30%; right:20%; padding:8px 16px; background:var(--premium); color:#fff; border-radius:20px; font-size:14px; box-shadow:0 4px 12px rgba(236,72,153,0.5); animation: float 4s ease-in-out infinite reverse;">User B Cursor</div>
+      <div style="width:100%; height:100%; background:#fff; padding:40px; position:relative; overflow:hidden;">
+        <div style="width:80%; margin:0 auto;">
+          <h1 style="color:#111; font-size:28px; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:20px;">Project Specification</h1>
+          <p style="color:#444; font-size:16px; line-height:1.6;">
+            The goal of this project is to create an amazing user experience.
+            <span style="background:rgba(236,72,153,0.2); position:relative;">
+              Our platform will
+              <div class="float-anim" style="position:absolute; top:-25px; left:0; background:var(--premium); color:#fff; font-size:11px; padding:2px 8px; border-radius:4px; white-space:nowrap;">Alice</div>
+              <div style="position:absolute; top:0; left:0; width:2px; height:100%; background:var(--premium);"></div>
+            </span>
+          </p>
+          <div style="margin-top:20px; display:flex; align-items:center; gap:4px;">
+            <div style="width:2px; height:20px; background:var(--primary); animation:pulse 1s infinite;"></div>
+            <div class="float-anim" style="background:var(--primary); color:#fff; font-size:11px; padding:2px 8px; border-radius:4px; animation-delay:1s;">Bob</div>
+          </div>
+        </div>
       </div>
     
         </div>
