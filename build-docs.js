@@ -46,6 +46,15 @@ function replaceUrlInFiles(dir) {
       content = content.replace(/http:\/\/localhost:3010\/api\/finance\/stock-detail\?ticker=[^`'"]+/g, `${BASE_URL}/api/finance/stock-detail.json`);
       content = content.replace(/http:\/\/localhost:3010\/api\/finance\/search\?q=[^`'"]+/g, `${BASE_URL}/api/finance/search.json`);
       fs.writeFileSync(fullPath, content, 'utf8');
+    } else if (file === 'index.html' && dir === docsDir) {
+      let content = fs.readFileSync(fullPath, 'utf8');
+      content = content.replace(/href="\/style\.css"/g, 'href="./style.css"');
+      content = content.replace(/src="\/app\.js"/g, 'src="./app.js"');
+      fs.writeFileSync(fullPath, content, 'utf8');
+    } else if (file === 'app.js' && dir === docsDir) {
+      let content = fs.readFileSync(fullPath, 'utf8');
+      content = content.replace(/fetch\('\/api\/plugins'\)/g, 'fetch("./api/plugins.json")');
+      fs.writeFileSync(fullPath, content, 'utf8');
     }
   });
 }
