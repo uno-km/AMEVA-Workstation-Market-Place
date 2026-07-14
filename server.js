@@ -264,6 +264,7 @@ app.get('/api/finance/stock-detail', async (req, res) => {
 
 // 제공하는 마켓플레이스 플러그인 목록 API (동적 파일 읽기로 리팩토링)
 app.get('/api/plugins', (req, res) => {
+
   const plugins = [
     {
       id: 'calculator',
@@ -412,6 +413,7 @@ app.get('/api/plugins', (req, res) => {
   }
 
   res.json(plugins);
+
 });
 
 app.listen(PORT, () => {
