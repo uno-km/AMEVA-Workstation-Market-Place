@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Rich Styling Preview</title>
+  <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="preview-header">
+      <img src="https://ui-avatars.com/api/?name=Rich%20Styling&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
+      <div class="preview-title">
+        <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
+          Rich Styling
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.15); color:var(--primary); font-weight:bold; border:1px solid rgba(59,130,246,0.3);">
+            Standard
+          </span>
+        </h2>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+          <div class="mock-title-text">Rich Styling - Interactive Preview</div>
+        </div>
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
+          
+      <div style="width:100%; height:100%; background:#f1f5f9; display:flex; flex-direction:column; align-items:center; padding:40px; font-family:sans-serif;">
+        <!-- Floating Toolbar -->
+        <div class="pop-in" style="background:#fff; padding:8px 16px; border-radius:30px; box-shadow:0 10px 25px rgba(0,0,0,0.1); display:flex; align-items:center; gap:16px; margin-bottom:32px; border:1px solid #e2e8f0;">
+          <div style="display:flex; gap:4px;">
+            <button style="width:32px; height:32px; border-radius:8px; border:none; background:#eff6ff; color:#2563eb; font-weight:bold; font-family:serif; font-size:16px; cursor:pointer;">B</button>
+            <button style="width:32px; height:32px; border-radius:8px; border:none; background:#fff; color:#475569; font-style:italic; font-family:serif; font-size:16px; cursor:pointer;">I</button>
+            <button style="width:32px; height:32px; border-radius:8px; border:none; background:#fff; color:#475569; text-decoration:underline; font-family:serif; font-size:16px; cursor:pointer;">U</button>
+            <button style="width:32px; height:32px; border-radius:8px; border:none; background:#fff; color:#475569; text-decoration:line-through; font-family:serif; font-size:16px; cursor:pointer;">S</button>
+          </div>
+          <div style="width:1px; height:24px; background:#e2e8f0;"></div>
+          <div style="display:flex; gap:8px;">
+            <div style="width:20px; height:20px; border-radius:50%; background:#ef4444; cursor:pointer; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0;"></div>
+            <div style="width:20px; height:20px; border-radius:50%; background:#3b82f6; cursor:pointer; border:2px solid #fff; box-shadow:0 0 0 1px #3b82f6;"></div>
+            <div style="width:20px; height:20px; border-radius:50%; background:#10b981; cursor:pointer; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0;"></div>
+            <div style="width:20px; height:20px; border-radius:50%; background:#eab308; cursor:pointer; border:2px solid #fff; box-shadow:0 0 0 1px #e2e8f0;"></div>
+          </div>
+          <div style="width:1px; height:24px; background:#e2e8f0;"></div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#475569; cursor:pointer;">
+            Heading 1 <span style="font-size:10px;">▼</span>
+          </div>
+        </div>
+        
+        <!-- Editor Content -->
+        <div style="width:100%; max-width:600px; background:#fff; border-radius:12px; padding:40px; box-shadow:0 4px 6px rgba(0,0,0,0.05); min-height:300px;">
+          <h1 style="font-size:36px; font-weight:900; margin-bottom:16px; background:linear-gradient(90deg, #2563eb, #db2777); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Rich Text Editor</h1>
+          <p style="font-size:18px; line-height:1.7; color:#334155;">
+            This editor supports <span style="font-weight:bold; color:#ef4444;">beautifully rendered inline styles</span>. 
+            You can effortlessly highlight <span style="background:#fef08a; padding:2px 4px; border-radius:4px;">important text</span>, 
+            or use <span style="font-style:italic; color:#2563eb;">elegant italics</span> to emphasize your point.
+          </p>
+          <div style="margin-top:24px; padding:16px; border-left:4px solid #3b82f6; background:#f8fafc; font-style:italic; color:#475569;">
+            "Simplicity is the ultimate sophistication."
+          </div>
+          <div class="pulse" style="width:2px; height:24px; background:#2563eb; margin-top:24px;"></div>
+        </div>
+      </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

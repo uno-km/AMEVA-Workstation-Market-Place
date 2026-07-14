@@ -4,6 +4,7 @@
   "description": "AMEVA Workstation Decentralized Marketplace Server",
   "main": "server.js",
   "scripts": {
+    "prestart": "node scripts/build-readme.js",
     "start": "node server.js"
   },
   "dependencies": {

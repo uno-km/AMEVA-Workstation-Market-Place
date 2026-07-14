@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Youtube Preview</title>
+  <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="preview-header">
+      <img src="https://ui-avatars.com/api/?name=Youtube&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
+      <div class="preview-title">
+        <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
+          Youtube
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.15); color:var(--primary); font-weight:bold; border:1px solid rgba(59,130,246,0.3);">
+            Standard
+          </span>
+        </h2>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+          <div class="mock-title-text">Youtube - Interactive Preview</div>
+        </div>
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
+          
+      <div style="width:100%; height:100%; background:#000; position:relative; display:flex; align-items:center; justify-content:center; font-family:sans-serif; overflow:hidden;">
+        <!-- Fake Video Background -->
+        <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(45deg, #1a1a2e, #16213e, #0f3460); opacity:0.8;"></div>
+        
+        <!-- Big Play Button -->
+        <div class="pulse" style="width:80px; height:56px; background:rgba(255,0,0,0.9); border-radius:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; box-shadow:0 0 20px rgba(255,0,0,0.5); transition:transform 0.2s;">
+          <div style="width:0; height:0; border-top:14px solid transparent; border-bottom:14px solid transparent; border-left:22px solid #fff; margin-left:6px;"></div>
+        </div>
+        
+        <!-- YouTube Controls UI -->
+        <div style="position:absolute; bottom:0; left:0; width:100%; height:70px; background:linear-gradient(transparent, rgba(0,0,0,0.9)); display:flex; flex-direction:column; justify-content:flex-end; padding:0 20px 10px 20px; z-index:10;">
+          <!-- Progress Bar -->
+          <div style="width:100%; height:4px; background:rgba(255,255,255,0.3); border-radius:2px; margin-bottom:16px; position:relative; cursor:pointer;">
+            <div style="position:absolute; top:0; left:0; height:100%; width:65%; background:rgba(255,255,255,0.5); border-radius:2px;"></div>
+            <div style="position:absolute; top:0; left:0; height:100%; width:35%; background:#f00; border-radius:2px;"></div>
+            <div style="position:absolute; top:-4px; left:35%; width:12px; height:12px; background:#f00; border-radius:50%; box-shadow:0 0 4px rgba(0,0,0,0.5);"></div>
+          </div>
+          
+          <!-- Buttons Row -->
+          <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+            <div style="display:flex; align-items:center; gap:20px;">
+              <span style="font-size:16px; cursor:pointer;">⏸</span>
+              <span style="font-size:16px; cursor:pointer;">⏭</span>
+              <span style="font-size:16px; cursor:pointer;">🔊</span>
+              <span style="font-size:12px; font-family:monospace; margin-left:8px;">10:24 / 24:00</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:20px;">
+              <span style="font-size:16px; cursor:pointer;">⚙️</span>
+              <span style="font-size:16px; cursor:pointer;">⛶</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

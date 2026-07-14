@@ -1,0 +1,65 @@
+{
+  "indices": [
+    {
+      "ticker": "^KS11",
+      "name": "KOSPI",
+      "price": 2750.45,
+      "changePercent": 0.8
+    },
+    {
+      "ticker": "^KQ11",
+      "name": "KOSDAQ",
+      "price": 850.12,
+      "changePercent": -0.3
+    },
+    {
+      "ticker": "^GSPC",
+      "name": "S&P 500",
+      "price": 5200,
+      "changePercent": 1.1
+    }
+  ],
+  "popular": [
+    {
+      "ticker": "SANGSANG",
+      "name": "상상전자",
+      "price": 50000,
+      "changePercent": 1.2
+    },
+    {
+      "ticker": "AMEVA",
+      "name": "아메바시스템즈",
+      "price": 125000,
+      "changePercent": 5.4
+    },
+    {
+      "ticker": "MOCK",
+      "name": "가라테크",
+      "price": 8400,
+      "changePercent": -2.1
+    }
+  ],
+  "exchange": {
+    "base": "KRW",
+    "rates": [
+      {
+        "currency": "USD",
+        "name": "미국 달러",
+        "rate": 1350.5,
+        "change": -2.5
+      },
+      {
+        "currency": "JPY",
+        "name": "일본 엔",
+        "rate": 890.2,
+        "change": 1.1
+      },
+      {
+        "currency": "EUR",
+        "name": "유로",
+        "rate": 1450.8,
+        "change": 0.5
+      }
+    ]
+  }
+}

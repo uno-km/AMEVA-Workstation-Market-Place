@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Rest Client Preview</title>
+  <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="preview-header">
+      <img src="https://ui-avatars.com/api/?name=Rest%20Client&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
+      <div class="preview-title">
+        <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
+          Rest Client
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.15); color:var(--primary); font-weight:bold; border:1px solid rgba(59,130,246,0.3);">
+            Standard
+          </span>
+        </h2>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+          <div class="mock-title-text">Rest Client - Interactive Preview</div>
+        </div>
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
+          
+      <div style="width:100%; height:100%; background:#282c34; color:#abb2bf; font-family:'Fira Code', Consolas, monospace; display:flex; flex-direction:column;">
+        <div style="padding:16px; border-bottom:1px solid #181a1f; display:flex; gap:12px; background:#21252b; align-items:center;">
+          <select style="background:#98c379; color:#282c34; border:none; padding:8px 12px; border-radius:4px; font-weight:bold; font-size:14px; outline:none; appearance:none;">
+            <option>POST</option>
+          </select>
+          <div style="flex:1; background:#1e2227; padding:8px 16px; border-radius:4px; border:1px solid #181a1f; font-size:14px;">https://api.ameva.io/v1/workspaces/sync</div>
+          <button class="pulse" style="background:#61afef; color:#282c34; border:none; padding:8px 24px; border-radius:4px; font-weight:bold; font-size:14px; cursor:pointer;">Send 🚀</button>
+        </div>
+        <div style="display:flex; flex:1; overflow:hidden;">
+          <div style="flex:1; border-right:1px solid #181a1f; display:flex; flex-direction:column;">
+            <div style="display:flex; border-bottom:1px solid #181a1f;">
+              <div style="padding:12px 20px; color:#fff; border-bottom:2px solid #e5c07b;">Body</div>
+              <div style="padding:12px 20px; color:#5c6370;">Headers (2)</div>
+              <div style="padding:12px 20px; color:#5c6370;">Auth</div>
+            </div>
+            <div style="padding:16px; flex:1; background:#282c34; overflow:auto; line-height:1.6;">
+              <span style="color:#d19a66;">{</span><br/>
+              &nbsp;&nbsp;<span style="color:#e06c75;">"workspace_id"</span>: <span style="color:#98c379;">"ws-7a9b2"</span>,<br/>
+              &nbsp;&nbsp;<span style="color:#e06c75;">"action"</span>: <span style="color:#98c379;">"force_sync"</span><br/>
+              <span style="color:#d19a66;">}</span>
+            </div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; background:#21252b;">
+            <div style="padding:12px 20px; border-bottom:1px solid #181a1f; display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:#fff;">Response</span>
+              <div style="display:flex; gap:16px; font-size:12px;">
+                <span style="color:#98c379; font-weight:bold;">Status: 200 OK</span>
+                <span style="color:#61afef;">Time: 124ms</span>
+                <span style="color:#e5c07b;">Size: 1.2KB</span>
+              </div>
+            </div>
+            <div style="padding:16px; flex:1; overflow:auto; line-height:1.6;">
+              <span style="color:#d19a66;">{</span><br/>
+              &nbsp;&nbsp;<span style="color:#e06c75;">"success"</span>: <span style="color:#d19a66;">true</span>,<br/>
+              &nbsp;&nbsp;<span style="color:#e06c75;">"timestamp"</span>: <span style="color:#98c379;">"2026-07-14T23:45:00Z"</span>,<br/>
+              &nbsp;&nbsp;<span style="color:#e06c75;">"synced_files"</span>: <span style="color:#d19a66;">42</span><br/>
+              <span style="color:#d19a66;">}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

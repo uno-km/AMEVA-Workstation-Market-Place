@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMEVA Marketplace Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  
+  <div class="background-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <nav class="glass-nav">
+    <div class="nav-content">
+      <div class="logo">
+        <span class="logo-icon">🌟</span>
+        <h1>AMEVA <span>Marketplace</span></h1>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="플러그인 검색...">
+      </div>
+    </div>
+  </nav>
+
+  <div class="layout-container" id="layoutContainer">
+    <main class="plugin-list">
+      <header class="hero">
+        <h2>Expand Your Workspace</h2>
+        <p>원하는 기능을 원클릭으로 활성화하세요. 복잡한 설치 없이 클라우드를 통해 즉각적으로 스트리밍됩니다.</p>
+      </header>
+
+      <section class="store-section">
+        <div class="section-header">
+          <h3>💎 Enterprise Edition <span class="badge premium-badge">Premium</span></h3>
+          <p>비즈니스 로직 처리 및 고급 AI 분석 기능을 제공하는 프리미엄 확장팩</p>
+        </div>
+        <div class="grid" id="premiumGrid">
+          <!-- JS 렌더링 -->
+        </div>
+      </section>
+
+      <section class="store-section">
+        <div class="section-header">
+          <h3>🛠️ Standard Edition <span class="badge standard-badge">Basic</span></h3>
+          <p>워크스테이션 환경을 쾌적하게 만들어 주는 핵심 생산성 도구</p>
+        </div>
+        <div class="grid" id="standardGrid">
+          <!-- JS 렌더링 -->
+        </div>
+      </section>
+    </main>
+
+    <div class="resizer" id="dragMe"></div>
+
+    <aside class="preview-sidebar" id="previewSidebar">
+      <div class="sidebar-header">
+        <h3 id="previewTitle">미리보기</h3>
+        <button id="toggleSidebarBtn" class="toggle-btn" title="사이드바 토글">▶</button>
+      </div>
+      <div class="iframe-container">
+        <iframe id="previewIframe" src="" frameborder="0"></iframe>
+      </div>
+      <div class="preview-details">
+        <p id="previewDesc">플러그인을 선택하면 이곳에 상세 설명이 표시됩니다.</p>
+        <button class="install-btn" id="previewInstallBtn">활성화하기</button>
+      </div>
+    </aside>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

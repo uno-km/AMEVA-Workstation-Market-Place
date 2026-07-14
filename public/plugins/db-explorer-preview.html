@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Db Explorer Preview</title>
+  <link rel="stylesheet" href="preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="preview-header">
+      <img src="https://ui-avatars.com/api/?name=Db%20Explorer&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
+      <div class="preview-title">
+        <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
+          Db Explorer
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(59,130,246,0.15); color:var(--primary); font-weight:bold; border:1px solid rgba(59,130,246,0.3);">
+            Standard
+          </span>
+        </h2>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+          <div class="mock-title-text">Db Explorer - Interactive Preview</div>
+        </div>
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
+          
+      <div style="width:100%; height:100%; display:flex; background:#1e1e1e; color:#d4d4d4; font-family:'Consolas', 'Courier New', monospace; font-size:13px;">
+        <div style="width:220px; border-right:1px solid #333; display:flex; flex-direction:column;">
+          <div style="padding:12px 16px; background:#252526; border-bottom:1px solid #333; font-weight:bold; color:#fff;">🗄️ Explorer</div>
+          <div style="padding:12px 16px; overflow-y:auto; flex:1;">
+            <div style="color:#569cd6; margin-bottom:8px; cursor:pointer;">▼ PostgreSQL (prod)</div>
+            <div style="padding-left:16px; margin-bottom:4px; color:#cccccc;">▼ schemas</div>
+            <div style="padding-left:32px; margin-bottom:4px; color:#cccccc;">▼ public</div>
+            <div style="padding-left:48px; margin-bottom:4px; color:#ce9178; cursor:pointer; background:rgba(255,255,255,0.1); padding-top:2px; padding-bottom:2px;">📋 users</div>
+            <div style="padding-left:64px; margin-bottom:2px; color:#9cdcfe; font-size:12px;">🔑 id (uuid)</div>
+            <div style="padding-left:64px; margin-bottom:2px; color:#9cdcfe; font-size:12px;">email (varchar)</div>
+            <div style="padding-left:48px; margin-bottom:4px; color:#ce9178; cursor:pointer;">📋 orders</div>
+            <div style="padding-left:48px; margin-bottom:4px; color:#ce9178; cursor:pointer;">📋 products</div>
+          </div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column;">
+          <div style="height:40px; background:#1e1e1e; border-bottom:1px solid #333; display:flex; align-items:center; padding:0 16px; gap:16px;">
+            <div style="color:#fff; border-bottom:2px solid #007acc; padding:10px 0;">query.sql</div>
+            <div style="color:#888;">users_data.csv</div>
+            <button style="margin-left:auto; background:#0e639c; color:#fff; border:none; padding:4px 16px; border-radius:2px; cursor:pointer; font-weight:bold; display:flex; align-items:center; gap:6px;">▶ Run</button>
+          </div>
+          <div style="height:120px; border-bottom:2px solid #007acc; padding:16px; background:#1e1e1e;">
+            <div style="display:flex; line-height:1.5;">
+              <div style="color:#858585; padding-right:16px; text-align:right; user-select:none;">1<br>2<br>3</div>
+              <div>
+                <span style="color:#c586c0;">SELECT</span> id, email, status, created_at <span style="color:#c586c0;">FROM</span> <span style="color:#4ec9b0;">users</span><br/>
+                <span style="color:#c586c0;">WHERE</span> status = <span style="color:#ce9178;">'active'</span><br/>
+                <span style="color:#c586c0;">ORDER BY</span> created_at <span style="color:#c586c0;">DESC</span> <span style="color:#c586c0;">LIMIT</span> <span style="color:#b5cea8;">10</span>;
+              </div>
+            </div>
+          </div>
+          <div style="flex:1; background:#1e1e1e; overflow:auto;">
+            <table style="width:100%; text-align:left; border-collapse:collapse; font-size:13px; white-space:nowrap;">
+              <thead style="background:#252526; position:sticky; top:0; box-shadow:0 1px 0 #333;">
+                <tr><th style="padding:8px 16px; border-right:1px solid #333;">id</th><th style="padding:8px 16px; border-right:1px solid #333;">email</th><th style="padding:8px 16px; border-right:1px solid #333;">status</th><th style="padding:8px 16px;">created_at</th></tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #333; background:rgba(255,255,255,0.02);"><td style="padding:8px 16px; color:#d4d4d4;">5f1b2...</td><td style="padding:8px 16px; color:#9cdcfe;">alice@example.com</td><td style="padding:8px 16px;"><span style="color:#4ec9b0; background:rgba(78,201,176,0.1); padding:2px 6px; border-radius:12px;">active</span></td><td style="padding:8px 16px; color:#b5cea8;">2023-10-24 14:00</td></tr>
+                <tr style="border-bottom:1px solid #333;"><td style="padding:8px 16px; color:#d4d4d4;">8c4d9...</td><td style="padding:8px 16px; color:#9cdcfe;">bob@domain.com</td><td style="padding:8px 16px;"><span style="color:#4ec9b0; background:rgba(78,201,176,0.1); padding:2px 6px; border-radius:12px;">active</span></td><td style="padding:8px 16px; color:#b5cea8;">2023-10-24 13:45</td></tr>
+                <tr style="border-bottom:1px solid #333; background:rgba(255,255,255,0.02);"><td style="padding:8px 16px; color:#d4d4d4;">2a7f1...</td><td style="padding:8px 16px; color:#9cdcfe;">charlie@company.com</td><td style="padding:8px 16px;"><span style="color:#4ec9b0; background:rgba(78,201,176,0.1); padding:2px 6px; border-radius:12px;">active</span></td><td style="padding:8px 16px; color:#b5cea8;">2023-10-24 11:20</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
