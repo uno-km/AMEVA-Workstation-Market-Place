@@ -58,16 +58,16 @@ function getMockContent(id) {
     return `
       <div style="width:100%; height:100%; display:flex; background:#1e1e1e; color:#d4d4d4; font-family:monospace;">
         <div style="width:200px; border-right:1px solid #333; padding:16px; overflow-y:auto;">
-          <div style="color:#569cd6; margin-bottom:12px;">?���?Connections</div>
-          <div style="padding-left:12px; margin-bottom:8px;">?�� prod_db</div>
-          <div style="padding-left:24px; color:#ce9178;">?�� users</div>
-          <div style="padding-left:24px; color:#ce9178;">?�� orders</div>
+          <div style="color:#569cd6; margin-bottom:12px;">🗄️ Connections</div>
+          <div style="padding-left:12px; margin-bottom:8px;">👉 prod_db</div>
+          <div style="padding-left:24px; color:#ce9178;">📋 users</div>
+          <div style="padding-left:24px; color:#ce9178;">📋 orders</div>
         </div>
         <div style="flex:1; display:flex; flex-direction:column;">
           <div style="height:120px; border-bottom:1px solid #333; padding:16px; background:#1e1e1e;">
             <span style="color:#c586c0;">SELECT</span> * <span style="color:#c586c0;">FROM</span> <span style="color:#4ec9b0;">users</span><br/>
             <span style="color:#c586c0;">WHERE</span> status = <span style="color:#ce9178;">'active'</span>;
-            <div style="margin-top:16px;"><button style="background:#0e639c; color:#fff; border:none; padding:4px 12px; border-radius:2px; cursor:pointer;">Run Query ??/button></div>
+            <div style="margin-top:16px;"><button style="background:#0e639c; color:#fff; border:none; padding:4px 12px; border-radius:2px; cursor:pointer;">Run Query ▶</button></div>
           </div>
           <div style="flex:1; padding:16px; background:#252526; overflow:hidden;">
             <table style="width:100%; text-align:left; border-collapse:collapse; font-size:13px;">
@@ -97,9 +97,9 @@ function getMockContent(id) {
         <div style="width:350px; background:#1e293b; display:flex; flex-direction:column;">
           <div style="padding:16px; border-bottom:1px solid rgba(255,255,255,0.1); font-weight:bold; color:#fff;">AI Assistant</div>
           <div style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:12px;">
-            <div class="slide-in-right" style="align-self:flex-end; background:var(--primary); color:#fff; padding:10px 14px; border-radius:12px 12px 0 12px; font-size:13px; max-width:80%;">문서???�심 ?�약??뭐야?</div>
+            <div class="slide-in-right" style="align-self:flex-end; background:var(--primary); color:#fff; padding:10px 14px; border-radius:12px 12px 0 12px; font-size:13px; max-width:80%;">이 문서의 핵심 요약이 뭐야?</div>
             <div class="slide-in-right" style="align-self:flex-start; background:rgba(255,255,255,0.1); color:#fff; padding:10px 14px; border-radius:12px 12px 12px 0; font-size:13px; max-width:80%; animation-delay:0.5s; opacity:0;">
-              ?�당 문서??AI ?�장???�향�?미래 가치에 ?�???�루�??�습?�다.
+              해당 문서는 AI 시장의 동향과 미래 가치에 대해 다루고 있습니다.
             </div>
             <div class="pulse" style="align-self:flex-start; font-size:24px; color:var(--primary); animation-delay:1s;">...</div>
           </div>
@@ -155,7 +155,7 @@ function getMockContent(id) {
   if (nid.includes('youtube') || nid.includes('video')) {
     return `
       <div style="width:100%; height:100%; background:#000; position:relative; display:flex; align-items:center; justify-content:center;">
-        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:url('https://source.unsplash.com/1600x900/?nature,landscape') center/cover; opacity:0.4;"></div>
+        <div style="position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(45deg, #1a1a1a, #333); opacity:0.8;"></div>
         <div class="pulse" style="width:80px; height:56px; background:#f00; border-radius:14px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10;">
           <div style="width:0; height:0; border-top:14px solid transparent; border-bottom:14px solid transparent; border-left:22px solid #fff; margin-left:6px;"></div>
         </div>
@@ -175,7 +175,7 @@ function getMockContent(id) {
       <div style="width:100%; height:100%; background:#1e1e1e; color:#d4d4d4; font-family:monospace; padding:16px; overflow:hidden;">
         <div style="display:flex; justify-content:space-between; border-bottom:1px solid #333; padding-bottom:8px; margin-bottom:12px;">
           <span>Python 3.10.2 Sandbox</span>
-          <span style="color:#27c93f;">??Running</span>
+          <span style="color:#27c93f;">● Running</span>
         </div>
         <div style="color:#569cd6;">&gt;&gt;&gt; import pandas as pd</div>
         <div style="color:#569cd6;">&gt;&gt;&gt; df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})</div>
@@ -302,7 +302,7 @@ function getMockContent(id) {
     return `
       <div style="width:100%; height:100%; background:#0f172a; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;">
         <div class="pulse" style="width:80px; height:80px; background:linear-gradient(135deg, #8b5cf6, #d946ef); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 30px rgba(217,70,239,0.5); margin-bottom:40px;">
-          ?��
+          🎤
         </div>
         <div style="display:flex; align-items:center; gap:6px; height:40px;">
           ${[1,2,3,4,5,4,3,2,1].map((h, i) => `
@@ -314,13 +314,131 @@ function getMockContent(id) {
     `;
   }
 
+  // 15. Outline
+  if (nid.includes('outline')) {
+    return `
+      <div style="width:100%; height:100%; display:flex; background:#fff; overflow:hidden;">
+        <div style="width:250px; background:#f8fafc; border-right:1px solid #e2e8f0; padding:16px;">
+          <h4 style="font-size:14px; color:#64748b; margin-bottom:16px; text-transform:uppercase;">Table of Contents</h4>
+          <ul style="list-style:none; padding:0; margin:0; font-size:13px; color:#334155;">
+            <li style="margin-bottom:10px; font-weight:bold;">1. Introduction</li>
+            <li style="margin-bottom:10px; padding-left:16px; color:#3b82f6;">1.1 Background</li>
+            <li style="margin-bottom:10px; padding-left:16px;">1.2 Objectives</li>
+            <li style="margin-bottom:10px; font-weight:bold;">2. Main Features</li>
+            <li style="margin-bottom:10px; padding-left:16px;">2.1 Real-time Sync</li>
+            <li style="margin-bottom:10px; padding-left:16px;">2.2 Secure Storage</li>
+          </ul>
+        </div>
+        <div style="flex:1; padding:32px; overflow:hidden;">
+          <h1 style="font-size:24px; margin-bottom:16px; color:#0f172a;">1.1 Background</h1>
+          <div class="shimmer" style="width:100%; height:12px; margin-bottom:8px; border-radius:4px;"></div>
+          <div class="shimmer" style="width:90%; height:12px; margin-bottom:8px; border-radius:4px;"></div>
+          <div class="shimmer" style="width:95%; height:12px; margin-bottom:8px; border-radius:4px;"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 16. Minimap
+  if (nid.includes('minimap')) {
+    return `
+      <div style="width:100%; height:100%; display:flex; background:#1e1e1e; color:#d4d4d4;">
+        <div style="flex:1; padding:24px; font-family:monospace; font-size:14px;">
+          <div style="color:#569cd6;">function <span style="color:#dcdcaa;">calculateSum</span>(a, b) {</div>
+          <div style="padding-left:20px; color:#c586c0;">return a + b;</div>
+          <div style="color:#569cd6;">}</div>
+          <br/>
+          <div style="color:#6a9955;">// Add some mock lines here</div>
+          ${Array(15).fill('<div class="shimmer" style="width:40%; height:8px; margin:8px 0; border-radius:2px; background:rgba(255,255,255,0.1);"></div>').join('')}
+        </div>
+        <div style="width:60px; background:#1e1e1e; border-left:1px solid #333; position:relative; overflow:hidden; padding:4px;">
+          <div style="position:absolute; top:20px; left:0; width:100%; height:80px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2);"></div>
+          ${Array(20).fill('<div style="width:80%; height:2px; margin:2px auto; background:rgba(255,255,255,0.3);"></div>').join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 17. Calculator
+  if (nid.includes('calc')) {
+    return `
+      <div style="width:100%; height:100%; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">
+        <div style="width:280px; background:#fff; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,0.1); padding:20px; display:flex; flex-direction:column; gap:12px;">
+          <div style="width:100%; height:60px; background:#f8fafc; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding:0 16px; font-size:24px; font-family:monospace; font-weight:bold; color:#334155; margin-bottom:8px;">
+            1,024
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;">
+            ${['C','±','%','÷', '7','8','9','×', '4','5','6','-', '1','2','3','+', '0','.','='].map(btn => {
+              let bg = '#f1f5f9';
+              let color = '#334155';
+              let span = 1;
+              if (['÷','×','-','+','='].includes(btn)) { bg = '#3b82f6'; color = '#fff'; }
+              if (btn === '0') span = 2;
+              return `<div class="pop-in" style="grid-column:span ${span}; background:${bg}; color:${color}; height:48px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:600; cursor:pointer;">${btn}</div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 18. Google Drive
+  if (nid.includes('drive')) {
+    return `
+      <div style="width:100%; height:100%; background:#fff; display:flex; flex-direction:column;">
+        <div style="height:56px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; padding:0 24px; gap:16px;">
+          <div style="width:32px; height:32px; background:linear-gradient(135deg, #fbbf24, #10b981, #3b82f6); border-radius:4px;"></div>
+          <div style="font-weight:bold; font-size:18px; color:#334155;">My Drive</div>
+          <div style="margin-left:auto; width:200px; height:32px; background:#f1f5f9; border-radius:16px; border:1px solid #cbd5e1;"></div>
+        </div>
+        <div style="flex:1; padding:24px; display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:24px; overflow-y:auto;">
+          ${[1,2,3,4,5,6].map(i => `
+            <div class="pop-in" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; gap:12px; animation-delay:${i*0.1}s;">
+              <div style="width:48px; height:48px; background:${i % 2 === 0 ? '#ef4444' : '#3b82f6'}; border-radius:4px; position:relative; overflow:hidden;">
+                <div style="position:absolute; top:0; right:0; width:16px; height:16px; background:#fff; border-bottom-left-radius:4px;"></div>
+              </div>
+              <div style="font-size:13px; font-weight:500; color:#475569; text-align:center;">Document_${i}.md</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 19. Rich Styling
+  if (nid.includes('rich') || nid.includes('styling')) {
+    return `
+      <div style="width:100%; height:100%; background:#fff; display:flex; flex-direction:column; align-items:center; padding-top:40px;">
+        <div style="width:80%; padding:12px 24px; background:#f8fafc; border-radius:32px; border:1px solid #e2e8f0; display:flex; gap:16px; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:32px;">
+          <div style="font-weight:bold; font-family:serif; font-size:16px; padding:4px 8px; border-radius:4px; background:#e2e8f0;">B</div>
+          <div style="font-style:italic; font-family:serif; font-size:16px; padding:4px 8px;">I</div>
+          <div style="text-decoration:underline; font-family:serif; font-size:16px; padding:4px 8px;">U</div>
+          <div style="width:1px; height:24px; background:#cbd5e1; margin:0 8px;"></div>
+          <div style="display:flex; align-items:center; gap:4px; font-size:14px; color:#475569;">
+            <div style="width:16px; height:16px; border-radius:50%; background:#ef4444;"></div>
+            <div style="width:16px; height:16px; border-radius:50%; background:#3b82f6;"></div>
+            <div style="width:16px; height:16px; border-radius:50%; background:#10b981;"></div>
+          </div>
+          <div style="width:1px; height:24px; background:#cbd5e1; margin:0 8px;"></div>
+          <div style="font-size:14px; font-weight:500; color:#334155;">16px ▼</div>
+        </div>
+        <div style="width:70%;">
+          <div style="font-size:28px; font-weight:bold; margin-bottom:16px; background:linear-gradient(90deg, #3b82f6, #ec4899); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Rich Text Editor</div>
+          <p style="font-size:16px; color:#444; line-height:1.6;">
+            Now you can easily apply <span style="font-weight:bold; color:#ef4444;">beautiful styles</span> and <span style="font-style:italic;">formatting</span> to your documents without leaving the editor!
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
   // Default / Generic
   return `
-    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg, var(--bg-color), color-mix(in srgb, var(--primary) 20%, var(--bg-color))); text-align:center; padding:40px;">
-      <div class="pulse" style="font-size:64px; margin-bottom:24px;">??/div>
-      <h3 style="color:#fff; margin-bottom:12px; font-size:24px;">Interactive Module Ready</h3>
-      <p style="color:var(--text-muted); max-width:400px; line-height:1.6;">This plugin offers seamless integration with the AMEVA Workstation. Try clicking around the mock UI.</p>
-      <button style="margin-top:24px; background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:8px; font-weight:bold; cursor:pointer;">Simulate Action</button>
+    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg, #1e293b, #0f172a); text-align:center; padding:40px;">
+      <div class="pulse" style="font-size:64px; margin-bottom:24px;">✨</div>
+      <h3 style="color:#f8fafc; margin-bottom:12px; font-size:20px; font-weight:600;">Interactive Module Ready</h3>
+      <p style="color:#94a3b8; max-width:400px; line-height:1.5; font-size:14px;">This plugin offers seamless integration with the AMEVA Workstation. Try clicking around the mock UI.</p>
+      <button style="margin-top:24px; background:#3b82f6; color:#fff; border:none; padding:10px 24px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">Simulate Action</button>
     </div>
   `;
 }
@@ -343,8 +461,13 @@ function generatePreviewHtml(id, name, type) {
     <div class="preview-header">
       <img src="${iconUrl}" class="preview-icon" alt="icon" />
       <div class="preview-title">
-        <h2>${name} <span style="font-size:12px; padding:2px 8px; border-radius:12px; background:${isPremium ? 'rgba(236,72,153,0.2)' : 'rgba(59,130,246,0.2)'}; color:${isPremium ? 'var(--premium)' : 'var(--primary)'}; vertical-align:middle; margin-left:12px;">${isPremium ? '?�� Premium' : 'Standard'}</span></h2>
-        <p>AMEVA Workspace Simulation Engine</p>
+        <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
+          ${name}
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:${isPremium ? 'rgba(236,72,153,0.2)' : 'rgba(59,130,246,0.2)'}; color:${isPremium ? 'var(--premium)' : 'var(--primary)'}; font-weight:bold;">
+            ${isPremium ? '👑 Premium' : 'Standard'}
+          </span>
+        </h2>
+        <p style="font-size:0.85rem;">AMEVA Workspace Simulation Engine</p>
       </div>
     </div>
     <div class="preview-body">
@@ -384,13 +507,13 @@ function processDirectory(dir, type) {
   });
 }
 
-// 1. 공용 ?�러그인 처리
+// 1. 공용 플러그인 처리
 processDirectory(PLUGINS_DIR, 'standard');
 
-// 2. ?�리미엄 ?�러그인 처리
+// 2. 프리미엄 플러그인 처리
 processDirectory(PREMIUM_DIR, 'premium');
 
-// 3. SaaS ?�리미엄 기능 처리 (DuckDuckGo, Python, Queue)
+// 3. SaaS 프리미엄 기능 처리 (DuckDuckGo, Python, Queue)
 const saasItems = [
   { id: 'webSearch', name: 'DuckDuckGo Web Search API (Pro)' },
   { id: 'pythonConsole', name: 'Python Sandbox Executor (Pro)' },
