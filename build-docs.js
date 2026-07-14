@@ -51,10 +51,6 @@ function replaceUrlInFiles(dir) {
       content = content.replace(/href="\/style\.css"/g, 'href="./style.css"');
       content = content.replace(/src="\/app\.js"/g, 'src="./app.js"');
       fs.writeFileSync(fullPath, content, 'utf8');
-    } else if (file === 'app.js' && dir === docsDir) {
-      let content = fs.readFileSync(fullPath, 'utf8');
-      content = content.replace(/fetch\('\/api\/plugins'\)/g, 'fetch("./api/plugins.json")');
-      fs.writeFileSync(fullPath, content, 'utf8');
     }
   });
 }
@@ -159,6 +155,18 @@ if (fs.existsSync(premiumDirPath)) {
 }
 
 fs.writeFileSync(path.join(apiDir, 'plugins.json'), JSON.stringify(plugins, null, 2), 'utf8');
+
+// Patch app.js to use hardcoded plugins array to avoid fetch path issues
+let appJsContent = fs.readFileSync(path.join(docsDir, 'app.js'), 'utf8');
+const fetchBlockRegex = /\/\/ Fetch plugins from the existing API[\s\S]*?\}\);/m;
+const hardcodedLogic = `
+  // Hardcoded plugins data for static GitHub Pages hosting
+  const staticPlugins = ${JSON.stringify(plugins, null, 2)};
+  allPlugins = staticPlugins;
+  renderPlugins(allPlugins);
+`;
+appJsContent = appJsContent.replace(fetchBlockRegex, hardcodedLogic);
+fs.writeFileSync(path.join(docsDir, 'app.js'), appJsContent, 'utf8');
 
 // 5. Generate finance mockups
 const mockData = {
