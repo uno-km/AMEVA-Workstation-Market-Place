@@ -17,15 +17,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const rightPane = previewSidebar;
   
   // Toggle Sidebar Logic
-  let isSidebarOpen = true;
+  let isSidebarOpen = false;
+  
+  // Initialize collapsed state
+  previewSidebar.classList.add('sidebar-collapsed');
+  toggleSidebarBtn.textContent = '◀';
+  resizer.style.display = 'none';
+
   toggleSidebarBtn.addEventListener('click', () => {
     isSidebarOpen = !isSidebarOpen;
     if (isSidebarOpen) {
       previewSidebar.classList.remove('sidebar-collapsed');
       toggleSidebarBtn.textContent = '▶';
+      resizer.style.display = 'block';
     } else {
       previewSidebar.classList.add('sidebar-collapsed');
       toggleSidebarBtn.textContent = '◀';
+      resizer.style.display = 'none';
     }
   });
 
@@ -66,7 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.openPreview = (url, name, description, isPremium) => {
     if (!isSidebarOpen) {
-      toggleSidebarBtn.click(); // Open sidebar if closed
+      isSidebarOpen = true;
+      previewSidebar.classList.remove('sidebar-collapsed');
+      toggleSidebarBtn.textContent = '▶';
+      resizer.style.display = 'block';
     }
     previewIframe.src = url;
     previewTitle.textContent = name;
@@ -89,20 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       allPlugins = data;
       renderPlugins(allPlugins);
-      
-      // Auto-select first plugin
-      if (allPlugins.length > 0) {
-        const first = allPlugins[0];
-        const isPrem = first.type === 'premium' || (first.scriptUrl && first.scriptUrl.includes('premium'));
-        const previewUrl = first.previewUrl || `/plugins/${isPrem ? 'premium/' : ''}${first.id}-preview.html`;
-        window.openPreview(previewUrl, first.name, first.description, isPrem);
-        
-        // Find and highlight first card
-        setTimeout(() => {
-          const firstCard = document.querySelector('.plugin-card');
-          if(firstCard) firstCard.classList.add('active');
-        }, 100);
-      }
     })
     .catch(err => {
       console.error('Error fetching plugins:', err);

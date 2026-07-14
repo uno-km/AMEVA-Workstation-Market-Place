@@ -17,15 +17,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const rightPane = previewSidebar;
   
   // Toggle Sidebar Logic
-  let isSidebarOpen = true;
+  let isSidebarOpen = false;
+  
+  // Initialize collapsed state
+  previewSidebar.classList.add('sidebar-collapsed');
+  toggleSidebarBtn.textContent = '◀';
+  resizer.style.display = 'none';
+
   toggleSidebarBtn.addEventListener('click', () => {
     isSidebarOpen = !isSidebarOpen;
     if (isSidebarOpen) {
       previewSidebar.classList.remove('sidebar-collapsed');
       toggleSidebarBtn.textContent = '▶';
+      resizer.style.display = 'block';
     } else {
       previewSidebar.classList.add('sidebar-collapsed');
       toggleSidebarBtn.textContent = '◀';
+      resizer.style.display = 'none';
     }
   });
 
@@ -66,7 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.openPreview = (url, name, description, isPremium) => {
     if (!isSidebarOpen) {
-      toggleSidebarBtn.click(); // Open sidebar if closed
+      isSidebarOpen = true;
+      previewSidebar.classList.remove('sidebar-collapsed');
+      toggleSidebarBtn.textContent = '▶';
+      resizer.style.display = 'block';
     }
     previewIframe.src = url;
     previewTitle.textContent = name;
