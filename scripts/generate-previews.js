@@ -99,4 +99,18 @@ processDirectory(PLUGINS_DIR, 'standard');
 // 2. 프리미엄 플러그인 처리
 processDirectory(PREMIUM_DIR, 'premium');
 
+// 3. SaaS 프리미엄 기능 처리
+const saasItems = [
+  { id: 'webSearch', name: 'DuckDuckGo Web Search API (Pro)' },
+  { id: 'pythonConsole', name: 'Python Sandbox Executor (Pro)' },
+  { id: 'requestQueue', name: 'Sequential Request Queue (Pro)' }
+];
+
+saasItems.forEach(item => {
+  const htmlContent = generatePreviewHtml(item.id, item.name, 'premium');
+  const targetPath = path.join(PREMIUM_DIR, `${item.id}-preview.html`);
+  fs.writeFileSync(targetPath, htmlContent, 'utf8');
+  console.log(`Generated preview for ${item.id} -> ${targetPath}`);
+});
+
 console.log('All preview pages generated successfully!');

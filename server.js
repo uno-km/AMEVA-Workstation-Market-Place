@@ -318,7 +318,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Finance & Exchange',
       description: '실시간 가상 주식 시세, 주요국 금리 현황, 베트남(VND) 포함 다자간 환율 양방향 변환 대시보드 도구입니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/premium/FinanceDashboardView.tsx`,
-      previewUrl: `http://localhost:${PORT}/plugins/premium/finance-dashboard-preview.html`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/FinanceDashboardView-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
@@ -372,7 +372,7 @@ app.get('/api/plugins', (req, res) => {
       name: 'Google Maps',
       description: '장소 검색 및 지도 탐색이 가능한 구글 지도 내장 뷰어 도구입니다. 현재 위치를 에디터 본문에 링크로 삽입할 수 있습니다.',
       scriptUrl: `http://localhost:${PORT}/plugins/premium/GoogleMapsView.tsx`,
-      previewUrl: `http://localhost:${PORT}/plugins/premium/google-maps-preview.html`,
+      previewUrl: `http://localhost:${PORT}/plugins/premium/GoogleMapsView-preview.html`,
       version: '1.0.0',
       type: 'tool'
     },
