@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Mind Map Plugin Preview</title>
+  <link rel="stylesheet" href="../preview-shared.css">
+  <style>
+    /* Reset & Base */
+    * { box-sizing: border-box; }
+    body, html { margin:0; padding:0; height:100%; width:100%; overflow:hidden; }
+    /* Ensure content takes full space in mock-content */
+    .mock-content { padding: 0 !important; overflow: hidden !important; }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <div class="preview-header">
+      <img src="https://ui-avatars.com/api/?name=Mind%20Map%20Plugin&background=random&color=fff&size=128&bold=true" class="preview-icon" alt="icon" />
+      <div class="preview-title">
+        <h2 style="font-size:1.4rem; display:flex; align-items:center; gap:8px;">
+          Mind Map Plugin
+          <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(236,72,153,0.15); color:var(--premium); font-weight:bold; border:1px solid rgba(236,72,153,0.3);">
+            👑 Premium
+          </span>
+        </h2>
+        <p style="font-size:0.85rem; color:#64748b;">AMEVA Workspace Simulation Engine</p>
+      </div>
+    </div>
+    <div class="preview-body">
+      <div class="mock-window" style="box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div class="mock-titlebar">
+          <div class="mock-dot r"></div><div class="mock-dot y"></div><div class="mock-dot g"></div>
+          <div class="mock-title-text">Mind Map Plugin - Interactive Preview</div>
+        </div>
+        <div class="mock-content" style="height:100%; display:flex; flex-direction:column;">
+          
+      <div style="width:100%; height:100%; background:#f8fafc; position:relative; overflow:hidden; font-family:sans-serif;">
+        <svg style="position:absolute; width:100%; height:100%; pointer-events:none;">
+          <!-- Using Bezier curves for a realistic mind map look -->
+          <path d="M50%,50% C40%,30% 30%,30% 25%,25%" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+          <path d="M50%,50% C60%,25% 70%,25% 75%,25%" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+          <path d="M50%,50% C45%,75% 35%,75% 30%,80%" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+          <path d="M50%,50% C60%,70% 70%,70% 75%,75%" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        
+        <!-- Central Node -->
+        <div class="pulse" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:linear-gradient(135deg, #3b82f6, #2563eb); color:#fff; padding:16px 32px; border-radius:30px; font-weight:bold; font-size:18px; box-shadow:0 10px 25px rgba(59,130,246,0.5); z-index:10; border:4px solid #fff;">
+          Project Alpha
+        </div>
+        
+        <!-- Child Nodes -->
+        <div class="pop-in" style="position:absolute; top:25%; left:25%; transform:translate(-50%, -50%); background:#fff; color:#1e293b; padding:10px 20px; border-radius:20px; font-weight:600; font-size:14px; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:2px solid #e2e8f0; z-index:10; animation-delay:0.2s; opacity:0; animation-fill-mode:forwards;">
+          Marketing
+        </div>
+        <div class="pop-in" style="position:absolute; top:25%; left:75%; transform:translate(-50%, -50%); background:#fff; color:#1e293b; padding:10px 20px; border-radius:20px; font-weight:600; font-size:14px; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:2px solid #e2e8f0; z-index:10; animation-delay:0.4s; opacity:0; animation-fill-mode:forwards;">
+          Development
+        </div>
+        <div class="pop-in" style="position:absolute; top:80%; left:30%; transform:translate(-50%, -50%); background:#fff; color:#1e293b; padding:10px 20px; border-radius:20px; font-weight:600; font-size:14px; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:2px solid #e2e8f0; z-index:10; animation-delay:0.6s; opacity:0; animation-fill-mode:forwards;">
+          Design UX/UI
+        </div>
+        <div class="pop-in" style="position:absolute; top:75%; left:75%; transform:translate(-50%, -50%); background:#fff; color:#1e293b; padding:10px 20px; border-radius:20px; font-weight:600; font-size:14px; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:2px solid #e2e8f0; z-index:10; animation-delay:0.8s; opacity:0; animation-fill-mode:forwards;">
+          Launch Strategy
+        </div>
+      </div>
+    
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
