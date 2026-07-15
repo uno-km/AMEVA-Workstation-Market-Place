@@ -135,8 +135,8 @@
         end
         
         subgraph networkLayer ["Transport & Network Layer"]
-          D ---|WebRTC Mesh Network| E[Signaling Server (Socket.io)]
-          B ---|RESTful / GraphQL API| F[Cloud Application Gateway]
+          D -->|WebRTC Mesh Network| E[Signaling Server (Socket.io)]
+          B -->|RESTful / GraphQL API| F[Cloud Application Gateway]
         end
         
         subgraph storageLayer ["Cloud Infrastructure Layer"]
