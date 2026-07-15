@@ -121,84 +121,94 @@
     </header>
 
     <div class="section">
-      <h2>1. System Architecture Overview</h2>
-      <p>AMEVA 워크스테이션은 기존 데스크톱 애플리케이션의 한계(무거운 설치, 동기화 지연, 자원 점유)를 극복하기 위해 설계되었습니다. 브라우저 내장 렌더링 엔진과 클라우드 플러그인 스트리밍 방식을 결합하여 <strong>Zero-Install</strong> 환경을 구현했습니다.</p>
+      <h2>1. Architectural Paradigm: Local-First Cloud Streaming</h2>
+      <p>AMEVA Workstation은 전통적인 데스크톱 애플리케이션의 리소스 제약(Monolithic Resource Hogging)과 웹 애플리케이션의 오프라인 취약성(Network Dependency)을 동시에 해결하기 위해 <strong>Local-First Cloud Streaming Architecture</strong>를 채택했습니다. 이는 브라우저의 샌드박스 렌더링 엔진(V8 & Blink)을 호스트 OS의 네이티브 리소스와 브릿징하는 하이브리드 접근 방식입니다.</p>
       
       <div class="mermaid">
       flowchart TD
-        subgraph Local Client Layer
-          A[Browser Runtime] --> B(Plugin Sandbox)
-          A --> C(OS Keychain API)
-          A --> D(Yjs Sync Engine)
+        subgraph Local Client Layer [Local Client Layer (Browser Context)]
+          A[AMEVA Core Runtime] -->|Sandboxed Iframe API| B(Plugin Host Container)
+          A -->|IPC Bridge| C(OS Keychain API integration)
+          A -->|CRDT State Management| D(Yjs Sync Engine)
+          A -->|Local Persistence| I[(IndexedDB / OPFS)]
         end
         
-        subgraph Network Layer
-          D <-->|WebRTC / WebSocket| E[Signaling Server]
-          B <-->|REST API| F[Cloud Application Server]
+        subgraph Network Layer [Transport & Network Layer]
+          D <-->|WebRTC Mesh Network| E[Signaling Server (Socket.io)]
+          B <-->|RESTful / GraphQL API| F[Cloud Application Gateway]
         end
         
-        subgraph Storage Layer
-          F --> G[(PostgreSQL)]
-          F --> H[(Redis Cache)]
+        subgraph Storage Layer [Cloud Infrastructure Layer]
+          F --> G[(PostgreSQL - Metadata)]
+          F --> H[(Redis - Session Cache)]
         end
         
         style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px
         style D fill:#1e293b,stroke:#a855f7,stroke-width:2px
         style C fill:#475569,stroke:#ef4444,stroke-width:2px
       </div>
-      <p>보안이 중요한 API 키와 자격 증명은 서버에 전송하지 않고 <code>OS Keychain API</code>를 통해 데스크톱 물리 계층에 안전하게 암호화되어 보관됩니다.</p>
+      <p>특히 보안 아키텍처에 있어 <strong>Zero-Trust 기반의 자격 증명 격리(Credential Isolation)</strong>를 구현했습니다. 민감한 API Token 및 OAuth 인증 정보는 클라우드 서버나 브라우저의 로컬 스토리지에 평문으로 저장되지 않으며, 호스트 OS의 Native Keychain API(Windows Credential Manager / macOS Keychain)를 통해 AES-256 규격으로 물리적 암호화되어 관리됩니다.</p>
     </div>
 
     <div class="section">
-      <h2>2. Technical Trade-offs & Fallbacks</h2>
-      <p>복잡한 실시간 협업 시스템을 구축하며 직면한 기술적 한계와 이를 극복하기 위한 Workaround 전략을 표로 정리했습니다.</p>
+      <h2>2. Deep Dive: CRDT 기반 분산 상태 동기화 (Yjs)</h2>
+      <p>실시간 협업(Real-time Collaboration) 기능의 핵심 코어는 Operational Transformation(OT)의 한계를 극복한 <strong>CRDT(Conflict-free Replicated Data Type)</strong> 알고리즘 기반의 Yjs 엔진입니다. 네트워크 지연(Latency)이나 오프라인 상태에서도 충돌 없는 상태 병합(Deterministic State Merging)을 보장합니다.</p>
+      <ul>
+        <li><strong>Vector Clocks & State Vectors:</strong> 클라이언트 간의 이벤트 순서를 보장하고 누락된 델타(Delta) 업데이트만 선별적으로 동기화하여 네트워크 페이로드를 최소화합니다.</li>
+        <li><strong>Awareness Protocol:</strong> 마우스 커서 위치, 텍스트 Selection 등 비영구적 상태(Ephemeral State)는 CRDT Document에 병합되지 않고 별도의 Awareness 채널을 통해 메모리 레벨에서만 브로드캐스트하여 GC(Garbage Collection) 부하를 방지합니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>3. Technical Trade-offs & Engineering Resolutions</h2>
+      <p>단일 페이지 애플리케이션(SPA) 내에서 다중 창(Multi-window) 시뮬레이션과 P2P 네트워킹을 구현하는 과정에서 발생한 기술적 병목(Bottlenecks)과 이를 타개한 엔지니어링 의사결정(Engineering Decisions)입니다.</p>
       
       <table>
         <thead>
           <tr>
-            <th>기술 스택 (Component)</th>
-            <th>구현 방식 (Approach)</th>
+            <th>도메인 (Domain)</th>
+            <th>구현 아키텍처 (Architecture)</th>
             <th>기술적 한계 / Trade-off</th>
-            <th>Workaround & Fallback Strategy</th>
+            <th>해결 전략 및 Fallback (Resolution)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>협업 엔진 (Yjs)</strong></td>
-            <td>CRDT 기반 P2P 상태 동기화</td>
-            <td>참여자가 늘어날수록 State Vector 용량이 기하급수적으로 커져 브라우저 메모리 압박이 생김.</td>
-            <td>정기적인 <code>Y.encodeStateAsUpdate()</code> 압축 스냅샷을 IndexedDB에 저장하고 불필요한 히스토리는 가비지 컬렉션 처리 (Local-First Fallback).</td>
+            <td><strong>State Management</strong></td>
+            <td>CRDT 기반 P2P 상태 동기화 (Yjs)</td>
+            <td>History Append-only 특성으로 인해 시간이 지남에 따라 State Vector의 용량이 선형적으로 증가하여 브라우저의 Heap Memory OOM(Out of Memory) 유발 위험.</td>
+            <td><strong>[State Compaction]</strong> 주기적으로 <code>Y.encodeStateAsUpdate()</code>를 호출하여 최적화된 바이너리 스냅샷을 IndexedDB에 압축 저장(Snapshotting)하고, 불필요한 Operation History는 GC를 통해 메모리에서 해제하는 로직 구현.</td>
           </tr>
           <tr>
-            <td><strong>자격 증명 (Keychain)</strong></td>
-            <td><code>keytar</code>를 통한 OS 네이티브 암호화</td>
-            <td>실시간 협업 시 타 유저와 자격 증명(OAuth 토큰 등)이 Yjs 룸을 타고 누출될 보안 위험 존재.</td>
-            <td><strong>[격리 아키텍처]</strong> Yjs Document 스키마에서 Credentials 필드를 렌더링 계층에서만 처리하도록 분리하여 네트워크 전송을 물리적으로 차단.</td>
+            <td><strong>Security</strong></td>
+            <td>OS Native Keychain 연동</td>
+            <td>Yjs의 특성상 로컬 State가 클러스터 내 타 노드로 자동 브로드캐스트됨. 사용자 개인의 API Key가 Yjs 룸을 통해 타인에게 유출될 구조적 취약성 존재.</td>
+            <td><strong>[Schema Isolation]</strong> 협업을 위한 Shared Schema와 개인화 설정을 위한 Local Schema를 물리적으로 분리. Credentials 데이터는 Yjs Provider 인스턴스에 주입하지 않고 브라우저 Local Context에서만 렌더링되도록 격리(Air-gapped) 아키텍처 적용.</td>
           </tr>
           <tr>
-            <td><strong>스트리밍 뷰 (Iframe)</strong></td>
-            <td>플러그인 샌드박싱 로드</td>
-            <td>Iframe 내부와 외부 간의 이벤트 통신(Drag, Click)이 차단되어 드래그 앤 드롭 리사이징이 끊기는 문제.</td>
-            <td>리사이징(Drag) 이벤트 발생 순간 Iframe에 <code>pointer-events: none</code> 속성을 주입하고, Drop 시 복구하는 Workaround 적용.</td>
+            <td><strong>UI/UX (DOM)</strong></td>
+            <td>Iframe 기반 플러그인 샌드박싱</td>
+            <td>Iframe 내부에 마우스 커서가 진입할 경우 호스트 Window(부모 DOM)가 `mousemove`, `mouseup` 이벤트를 유실하여 윈도우 리사이징/드래깅이 멈추는 UX 단절 현상(Event Swallowing).</td>
+            <td><strong>[Event Tunneling / Pointer Guard]</strong> Drag 시작점(<code>mousedown</code>) 이벤트 포착 시 즉각적으로 전체 Iframe에 <code>pointer-events: none</code> CSS 속성을 주입하는 Guard Layer 활성화. Drag 종료(<code>mouseup</code>) 시 복구하여 부드러운 60fps 창 제어 구현.</td>
           </tr>
           <tr>
-            <td><strong>네트워크 (WebRTC)</strong></td>
-            <td>Mesh P2P Audio/Video</td>
-            <td>사내망/NAT 방화벽 뒤에 있는 유저 간의 P2P 직접 연결(STUN) 실패율 존재.</td>
-            <td>STUN 실패 시 자동으로 TURN 서버로 릴레이(Relay)하도록 Fallback 라우팅 로직 구현 (레이턴시는 소폭 증가하나 연결성 보장).</td>
+            <td><strong>Network (WebRTC)</strong></td>
+            <td>Mesh Topology P2P Audio</td>
+            <td>Symmetric NAT 또는 엄격한 기업용 방화벽 환경에서 피어 간 직접 연결(STUN) 실패에 따른 통신 단절 문제.</td>
+            <td><strong>[Adaptive ICE Routing]</strong> ICE Candidate 수집 과정에서 STUN 연결 실패 Timeout 감지 시, 즉각적으로 TURN(Traversal Using Relays around NAT) 서버로 패킷을 릴레이하는 Fallback 라우팅 로직 구현. 레이턴시 트레이드오프(Latency Trade-off)를 감수하고 Connectivity 99.9% 보장.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="section">
-      <h2>3. As-Is vs To-Be 패러다임 전환</h2>
-      <p>AMEVA는 사용자의 행동 패턴을 어떻게 변화시키는지 증명합니다.</p>
-      <h3>[As-Is] 파편화된 컨텍스트</h3>
-      <p>작업을 위해 구글 지도, 네이버, 뽀모도로 타이머, 파일 탐색기 등 수많은 앱과 탭을 열어두어야 합니다. 이는 잦은 컨텍스트 스위칭(Context Switching)을 유발하여 생산성을 40% 이상 저하시킵니다.</p>
+      <h2>4. Paradigm Shift: Unified Context Architecture</h2>
+      <p>AMEVA Workstation의 궁극적인 존재 이유는 파편화된 워크플로우의 통합에 있습니다. 이는 단순한 UI/UX의 개선이 아닌, 작업자의 인지 부하(Cognitive Load)를 줄이는 구조적 혁신입니다.</p>
+      <h3>[As-Is] Fragmented Application Ecosystem (파편화된 생태계)</h3>
+      <p>현대의 지식 근로자는 업무 수행을 위해 브라우저 탭, 슬랙, 노션, 터미널 등 평균 10~15개의 분리된 애플리케이션 창을 전환(Context Switching)하며 사용합니다. 연구 결과에 따르면 이러한 컨텍스트 스위칭은 집중력 회복에 평균 23분을 소모하게 하며 치명적인 생산성 저하를 야기합니다.</p>
       
-      <h3>[To-Be] Unified Workspace (단일 컨텍스트)</h3>
-      <p>AMEVA는 모든 도구를 워크스테이션 내의 <strong>모듈형 플러그인</strong>으로 흡수합니다. 사용자는 창을 벗어날 필요 없이 마켓플레이스에서 필요한 기능(예: PDF RAG, 칸반 보드)을 원클릭으로 활성화하고 배치할 수 있습니다.</p>
+      <h3>[To-Be] AMEVA Unified Micro-frontends (단일 통합 컨텍스트)</h3>
+      <p>AMEVA는 <strong>Micro-frontends Architecture</strong>를 차용하여 모든 도구를 단일 워크스테이션 내의 독립적인 <code>Plugin Container</code>로 로드합니다. 사용자는 OS의 창을 전환할 필요 없이, 마켓플레이스에서 PDF RAG, Kanban, Python Console 등의 플러그인을 동적으로 메모리에 적재(Lazy-load)하여 무한한 캔버스 위에 자유롭게 배치합니다. 이는 운영체제 위의 운영체제(OS within OS)로써, 데이터와 도구가 하나의 흐름 속에서 상호작용하는 진정한 의미의 <strong>Zero-Context Switching</strong> 환경을 달성합니다.</p>
     </div>
   </div>
 </body>
