@@ -619,3 +619,59 @@ main {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(168,85,247,0.4);
 }
+
+/* Preview Details Toggle */
+.preview-details {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.desc-wrapper {
+  flex: 1;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  max-height: 500px;
+}
+
+.toggle-details-btn {
+  position: absolute;
+  top: -28px;
+  right: 20px;
+  width: 32px;
+  height: 28px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.toggle-details-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.toggle-details-btn svg {
+  transition: transform 0.3s ease;
+}
+
+/* Minimized State */
+.preview-details.minimized {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.preview-details.minimized .desc-wrapper {
+  max-height: 0;
+  margin: 0;
+}
+.preview-details.minimized .toggle-details-btn svg {
+  transform: rotate(180deg);
+}
+

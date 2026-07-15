@@ -96,8 +96,13 @@
       <div class="iframe-container">
         <iframe id="previewIframe" src="" frameborder="0"></iframe>
       </div>
-      <div class="preview-details">
-        <p id="previewDesc">플러그인을 선택하면 이곳에 상세 설명이 표시됩니다.</p>
+      <div class="preview-details" id="previewDetails">
+        <button id="toggleDetailsBtn" class="toggle-details-btn" title="설명 숨기기/보기">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="desc-wrapper" id="previewDescWrapper">
+          <p id="previewDesc">플러그인을 선택하면 이곳에 상세 설명이 표시됩니다.</p>
+        </div>
         <button class="install-btn" id="previewInstallBtn">활성화하기</button>
       </div>
     </aside>

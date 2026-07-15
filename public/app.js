@@ -164,6 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPlugins(filtered);
   });
 
+  const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
+  const previewDetails = document.getElementById('previewDetails');
+  
+  if (toggleDetailsBtn && previewDetails) {
+    toggleDetailsBtn.addEventListener('click', () => {
+      previewDetails.classList.toggle('minimized');
+    });
+  }
+
   // About Modal Logic
   const aboutBtn = document.getElementById('aboutBtn');
   const aboutModal = document.getElementById('aboutModal');
