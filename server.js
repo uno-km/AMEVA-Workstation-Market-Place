@@ -217,18 +217,31 @@ app.get('/api/finance/search', async (req, res) => {
     const apiResults = await yahooFinance.search(query);
     const remoteResults = (apiResults.quotes || [])
       .filter(q => ['EQUITY', 'ETF', 'INDEX'].includes(q.quoteType))
-        }
-      });
+      .slice(0, 25)
+      .map(q => ({
+        symbol: q.symbol,
+        name: q.shortname || q.longname || q.symbol,
+        type: q.quoteType,
+        exchange: q.exchDisp || q.exchange
+      }));
 
-      return res.json({ success: true, quotes: merged });
-    }
+    // 한글 사전 매칭 결과를 앞에, Yahoo 결과를 뒤에 병합 (중복 제거)
+    const merged = [...localResults];
+    remoteResults.forEach(q => {
+      if (!merged.some(m => m.symbol === q.symbol)) {
+        merged.push(q);
+      }
+    });
+
+    return res.json({ success: true, quotes: merged.slice(0, 30) });
   } catch (err) {
     console.error('Yahoo Finance Search API request failed:', err.message);
   }
 
-  // 야후 API 실패 시에도 우리가 구축한 한글 매핑 리스트는 무조건 살려 반환하는 안전 철벽 가드
-  res.json({ success: true, quotes: matchedList });
+  // 야후 API 실패 시에도 로컬 매핑 리스트 반환
+  res.json({ success: true, quotes: localResults });
 });
+
 
 // 3. 검색결과 클릭 시 해당 전 세계 종목 상세 실시간 조회 API
 app.get('/api/finance/stock-detail', async (req, res) => {

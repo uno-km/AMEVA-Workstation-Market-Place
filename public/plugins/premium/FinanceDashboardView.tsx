@@ -697,7 +697,7 @@ export function FinanceDashboardView() {
 
   // 실시간 한글/영어 종목 검색 디바운스 이펙트
   useEffect(() => {
-    if (searchQuery.trim().length < 2) {
+    if (searchQuery.trim().length < 1) {
       setSearchResults([]);
       return;
     }

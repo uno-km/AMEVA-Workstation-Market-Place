@@ -87,6 +87,7 @@ export function MindMapPlugin() {
 
   // List Reordering and AI Node Expansion States
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isExpandingNodeId, setIsExpandingNodeId] = useState<string | null>(null);
 
   const handleListDragStart = (e: React.DragEvent, index: number) => {
@@ -98,16 +99,85 @@ export function MindMapPlugin() {
   const handleListDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
   };
 
-  const handleListDrop = (e: React.DragEvent, index: number) => {
+  const handleListDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
-    if (draggedItemIndex === null || draggedItemIndex === index) return;
-    const targetHeading = headingsList[draggedItemIndex];
-    if (!targetHeading) return;
-    
-    changeOrder(targetHeading.id, String(index + 1));
+    setDragOverIndex(null);
+    if (draggedItemIndex === null || draggedItemIndex === dropIndex) {
+      setDraggedItemIndex(null);
+      return;
+    }
+
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) { setDraggedItemIndex(null); return; }
+    const editor = amevaCore.editor;
+    const doc = [...editor.document];
+
+    const headingsInDoc = doc.filter((b: any) => b.type === 'heading');
+    const draggedHeading = headingsList[draggedItemIndex];
+    const targetHeading = headingsList[dropIndex];
+    if (!draggedHeading || !targetHeading) { setDraggedItemIndex(null); return; }
+
+    // Get full section of dragged heading (heading + its children blocks)
+    const getDraggedSection = (heading: any, allDoc: any[]) => {
+      const idx = allDoc.findIndex((b: any) => b.id === heading.id);
+      if (idx === -1) return [];
+      const level = heading.props?.level || 1;
+      const section = [allDoc[idx]];
+      for (let i = idx + 1; i < allDoc.length; i++) {
+        const b = allDoc[i];
+        if (b.type === 'heading' && (b.props?.level || 1) <= level) break;
+        section.push(b);
+      }
+      return section;
+    };
+
+    const section = getDraggedSection(draggedHeading, doc);
+    const sectionIds = new Set(section.map((b: any) => b.id));
+    const docWithout = doc.filter((b: any) => !sectionIds.has(b.id));
+
+    // Find insert position: before targetHeading if dragging down, after its section if dragging up
+    const targetIdxInNew = docWithout.findIndex((b: any) => b.id === targetHeading.id);
+    if (targetIdxInNew === -1) { setDraggedItemIndex(null); return; }
+
+    let insertAt: number;
+    if (draggedItemIndex < dropIndex) {
+      // Moving down: insert AFTER the target section
+      const targetSection = getDraggedSection(targetHeading, docWithout);
+      const lastOfTarget = targetSection[targetSection.length - 1];
+      insertAt = docWithout.findIndex((b: any) => b.id === lastOfTarget.id) + 1;
+    } else {
+      // Moving up: insert BEFORE the target
+      insertAt = targetIdxInNew;
+    }
+
+    const newDoc = [
+      ...docWithout.slice(0, insertAt),
+      ...section,
+      ...docWithout.slice(insertAt)
+    ];
+
+    try {
+      editor.replaceBlocks(editor.document, newDoc);
+    } catch (err) {
+      console.error('[MindMap] replaceBlocks failed:', err);
+    }
+
+    setTimeout(() => {
+      const { newNodes, newEdges } = buildMindMap();
+      setNodes(newNodes);
+      setEdges(newEdges);
+      setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+    }, 100);
+
     setDraggedItemIndex(null);
+  };
+
+  const handleListDragEnd = () => {
+    setDraggedItemIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleAIExpandNode = async (nodeId: string, label: string, level: number) => {
@@ -954,27 +1024,29 @@ export function MindMapPlugin() {
                   <div 
                     key={h.id} 
                     onDragOver={(e) => handleListDragOver(e, index)}
+                    onDragLeave={() => setDragOverIndex(null)}
                     onDrop={(e) => handleListDrop(e, index)}
                     style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
                       marginLeft: `${indent}px`,
-                      background: '#1a1b23', 
-                      border: '1px solid #2e303e', 
+                      background: dragOverIndex === index ? 'rgba(59,130,246,0.14)' : '#1a1b23', 
+                      border: dragOverIndex === index ? '1px solid rgba(59,130,246,0.5)' : '1px solid #2e303e', 
                       borderRadius: '6px', 
                       padding: '4px 6px',
                       gap: '4px',
-                      transition: 'all 0.2s',
-                      opacity: draggedItemIndex === index ? 0.4 : 1
+                      transition: 'all 0.15s',
+                      opacity: draggedItemIndex === index ? 0.35 : 1
                     }}
                   >
                     <div
                       draggable={true}
-                      onDragStart={(e) => handleListDragStart(e, index)}
-                      style={{ cursor: 'grab', display: 'flex', alignItems: 'center', paddingRight: '2px', color: '#4b5563' }}
+                      onDragStart={(e) => { e.stopPropagation(); handleListDragStart(e, index); }}
+                      onDragEnd={handleListDragEnd}
+                      style={{ cursor: 'grab', display: 'flex', alignItems: 'center', paddingRight: '2px', color: '#6b7280' }}
                       title="드래그하여 순서 변경"
                     >
-                      <GripVertical size={12} />
+                      <GripVertical size={13} />
                     </div>
 
                     <span style={{ 
