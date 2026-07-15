@@ -17,15 +17,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const rightPane = previewSidebar;
   
   // Toggle Sidebar Logic
-  let isSidebarOpen = true;
+  let isSidebarOpen = false;
+  
+  // Initialize collapsed state
+  previewSidebar.classList.add('sidebar-collapsed');
+  toggleSidebarBtn.textContent = '◀';
+  resizer.style.display = 'none';
+
   toggleSidebarBtn.addEventListener('click', () => {
     isSidebarOpen = !isSidebarOpen;
     if (isSidebarOpen) {
       previewSidebar.classList.remove('sidebar-collapsed');
       toggleSidebarBtn.textContent = '▶';
+      resizer.style.display = 'block';
     } else {
       previewSidebar.classList.add('sidebar-collapsed');
       toggleSidebarBtn.textContent = '◀';
+      resizer.style.display = 'none';
     }
   });
 
@@ -66,11 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.openPreview = (url, name, description, isPremium) => {
     if (!isSidebarOpen) {
-      toggleSidebarBtn.click(); // Open sidebar if closed
+      isSidebarOpen = true;
+      previewSidebar.classList.remove('sidebar-collapsed');
+      toggleSidebarBtn.textContent = '▶';
+      resizer.style.display = 'block';
     }
     previewIframe.src = url;
     previewTitle.textContent = name;
-    previewDesc.textContent = description;
+    previewDesc.innerHTML = description;
     
     // Update active style on cards
     document.querySelectorAll('.plugin-card').forEach(c => c.classList.remove('active'));
@@ -89,20 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       allPlugins = data;
       renderPlugins(allPlugins);
-      
-      // Auto-select first plugin
-      if (allPlugins.length > 0) {
-        const first = allPlugins[0];
-        const isPrem = first.type === 'premium' || (first.scriptUrl && first.scriptUrl.includes('premium'));
-        const previewUrl = first.previewUrl || `/plugins/${isPrem ? 'premium/' : ''}${first.id}-preview.html`;
-        window.openPreview(previewUrl, first.name, first.description, isPrem);
-        
-        // Find and highlight first card
-        setTimeout(() => {
-          const firstCard = document.querySelector('.plugin-card');
-          if(firstCard) firstCard.classList.add('active');
-        }, 100);
-      }
     })
     .catch(err => {
       console.error('Error fetching plugins:', err);
@@ -166,4 +163,44 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     renderPlugins(filtered);
   });
+
+  const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
+  const previewDetails = document.getElementById('previewDetails');
+  
+  if (toggleDetailsBtn && previewDetails) {
+    toggleDetailsBtn.addEventListener('click', () => {
+      previewDetails.classList.toggle('minimized');
+    });
+  }
+
+  // About Modal Logic
+  const aboutBtn = document.getElementById('aboutBtn');
+  const aboutModal = document.getElementById('aboutModal');
+  const closeAboutBtn = document.getElementById('closeAboutBtn');
+
+  if (aboutBtn && aboutModal && closeAboutBtn) {
+    aboutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      aboutModal.style.display = 'flex';
+      setTimeout(() => {
+        aboutModal.classList.add('visible');
+      }, 10);
+    });
+
+    closeAboutBtn.addEventListener('click', () => {
+      aboutModal.classList.remove('visible');
+      setTimeout(() => {
+        aboutModal.style.display = 'none';
+      }, 300);
+    });
+
+    aboutModal.addEventListener('click', (e) => {
+      if (e.target === aboutModal) {
+        aboutModal.classList.remove('visible');
+        setTimeout(() => {
+          aboutModal.style.display = 'none';
+        }, 300);
+      }
+    });
+  }
 });

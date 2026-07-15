@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMEVA Tech Architecture Report</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    .arch-diagram {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin: 2rem 0;
+      font-family: 'Outfit', sans-serif;
+    }
+    .arch-layers {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .arch-layer {
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      position: relative;
+    }
+    .arch-layer-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      opacity: 0.75;
+    }
+    .arch-layer-nodes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      align-items: center;
+    }
+    .arch-node {
+      border-radius: 8px;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .arch-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 0;
+    }
+    .arch-arrow-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .arch-arrow-line span {
+      font-size: 0.65rem;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
+    .arch-arrow-line svg {
+      display: block;
+    }
+    /* Layer colors */
+    .layer-local { background: rgba(59,130,246,0.08); border: 1.5px solid rgba(59,130,246,0.3); }
+    .layer-local .arch-layer-label { color: #3b82f6; }
+    .layer-network { background: rgba(168,85,247,0.08); border: 1.5px solid rgba(168,85,247,0.3); }
+    .layer-network .arch-layer-label { color: #a855f7; }
+    .layer-storage { background: rgba(34,197,94,0.08); border: 1.5px solid rgba(34,197,94,0.3); }
+    .layer-storage .arch-layer-label { color: #22c55e; }
+    /* Node colors */
+    .node-core { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #93c5fd; }
+    .node-plugin { background: rgba(99,102,241,0.2); border-color: #6366f1; color: #a5b4fc; }
+    .node-keychain { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #fca5a5; }
+    .node-yjs { background: rgba(168,85,247,0.2); border-color: #a855f7; color: #d8b4fe; }
+    .node-db { background: rgba(100,116,139,0.2); border-color: #64748b; color: #94a3b8; }
+    .node-host { background: rgba(99,102,241,0.25); border-color: #6366f1; color: #a5b4fc; }
+    .node-mcp { background: rgba(249,115,22,0.2); border-color: #f97316; color: #fdba74; }
+    .node-fs { background: rgba(34,197,94,0.2); border-color: #22c55e; color: #86efac; }
+    .node-cloud { background: rgba(14,165,233,0.15); border-color: #0ea5e9; color: #7dd3fc; }
+    .arch-connector {
+      display: flex;
+      justify-content: space-around;
+      padding: 0.3rem 1.5rem;
+    }
+    .arch-connector-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .arch-connector-label {
+      font-size: 0.6rem;
+      color: #64748b;
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+  </style>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(20, 25, 40, 0.8);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --accent: #a855f7;
+    }
+    body {
+      font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    .header h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .header p {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+    }
+    .section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 3rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .section h2 {
+      font-size: 2rem;
+      border-bottom: 2px solid var(--card-border);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+      color: #fff;
+    }
+    .section h3 {
+      font-size: 1.4rem;
+      color: var(--primary);
+      margin-top: 2rem;
+    }
+    p {
+      color: #cbd5e1;
+      font-size: 1.05rem;
+    }
+    .mermaid {
+      background: rgba(0,0,0,0.3);
+      padding: 2rem;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      margin: 2rem 0;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th {
+      background: rgba(255,255,255,0.05);
+      font-weight: 600;
+      color: var(--accent);
+    }
+    tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 2rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">← 마켓플레이스로 돌아가기</a>
+    
+    <header class="header">
+      <h1>AMEVA Architecture</h1>
+      <p>클라우드 스트리밍과 로컬-퍼스트(Local-First) 패러다임의 결합에 대한 기술적 고찰</p>
+    </header>
+
+    <div class="section">
+      <h2>1. Architectural Paradigm: Local-First Cloud Streaming</h2>
+      <p>AMEVA Workstation은 전통적인 데스크톱 애플리케이션의 리소스 제약(Monolithic Resource Hogging)과 웹 애플리케이션의 오프라인 취약성(Network Dependency)을 동시에 해결하기 위해 <strong>Local-First Cloud Streaming Architecture</strong>를 채택했습니다. 이는 브라우저의 샌드박스 렌더링 엔진(V8 & Blink)을 호스트 OS의 네이티브 리소스와 브릿징하는 하이브리드 접근 방식입니다.</p>
+      
+      <div class="arch-diagram">
+        <div class="arch-layers">
+
+          <!-- Layer 1: Local Client -->
+          <div class="arch-layer layer-local">
+            <div class="arch-layer-label">🖥️ Local Client Layer (Browser Context)</div>
+            <div class="arch-layer-nodes">
+              <div class="arch-node node-core">⚡ AMEVA Core Runtime</div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-plugin">🧩 Plugin Host Container<br><small style="opacity:.6;font-weight:400">Sandboxed Iframe API</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-keychain">🔐 OS Keychain API<br><small style="opacity:.6;font-weight:400">IPC Bridge</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-yjs">🔄 Yjs Sync Engine<br><small style="opacity:.6;font-weight:400">CRDT State Mgmt</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-db">🗄️ IndexedDB / OPFS<br><small style="opacity:.6;font-weight:400">Local Persistence</small></div>
+            </div>
+          </div>
+
+          <!-- Connector arrows -->
+          <div class="arch-connector">
+            <div class="arch-connector-item">
+              <svg width="18" height="24" viewBox="0 0 18 24"><path d="M9 2v18M4 15l5 6 5-6" stroke="#6366f1" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-connector-label">Electron IPC /<br>Local Loopback</div>
+            </div>
+            <div class="arch-connector-item">
+              <svg width="18" height="24" viewBox="0 0 18 24"><path d="M9 2v18M4 15l5 6 5-6" stroke="#a855f7" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-connector-label">WebSocket /<br>WebRTC Sync</div>
+            </div>
+          </div>
+
+          <!-- Layer 2: Network / Host IPC -->
+          <div class="arch-layer layer-network">
+            <div class="arch-layer-label">⚙️ Node.js Host & Local IPC Layer (Electron Main)</div>
+            <div class="arch-layer-nodes">
+              <div class="arch-node node-host">💻 Electron Main Process<br><small style="opacity:.6;font-weight:400">Desktop Shell Host & IPC Router</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#6366f1" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-yjs">📡 Local Collab Server<br><small style="opacity:.6;font-weight:400">y-websocket (Port 1234)</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#6366f1" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-mcp">🤖 Reverse MCP Proxy<br><small style="opacity:.6;font-weight:400">mcp_proxy.js (Port 11553)</small></div>
+            </div>
+          </div>
+
+          <!-- Connector arrow -->
+          <div class="arch-connector">
+            <div class="arch-connector-item">
+              <svg width="18" height="24" viewBox="0 0 18 24"><path d="M9 2v18M4 15l5 6 5-6" stroke="#22c55e" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-connector-label">Local OS I/O &amp;<br>Cloud Backup Sync</div>
+            </div>
+          </div>
+
+          <!-- Layer 3: Storage -->
+          <div class="arch-layer layer-storage">
+            <div class="arch-layer-label">💾 Physical &amp; External Storage Layer</div>
+            <div class="arch-layer-nodes">
+              <div class="arch-node node-fs">📂 Local File System<br><small style="opacity:.6;font-weight:400">Markdown Files (Direct Node fs Access)</small></div>
+              <svg width="30" height="16" viewBox="0 0 30 16"><line x1="2" y1="8" x2="28" y2="8" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3"/></svg>
+              <div class="arch-node node-cloud">☁️ Google Drive Sync<br><small style="opacity:.6;font-weight:400">OAuth / Drive REST API</small></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <p>특히 보안 아키텍처에 있어 <strong>Zero-Trust 기반의 자격 증명 격리(Credential Isolation)</strong>를 구현했습니다. 민감한 API Token 및 OAuth 인증 정보는 클라우드 서버나 브라우저의 로컬 스토리지에 평문으로 저장되지 않으며, 호스트 OS의 Native Keychain API(Windows Credential Manager / macOS Keychain)를 통해 AES-256 규격으로 물리적 암호화되어 관리됩니다.</p>
+    </div>
+
+    <div class="section">
+      <h2>2. Deep Dive: CRDT 기반 분산 상태 동기화 (Yjs)</h2>
+      <p>실시간 협업(Real-time Collaboration) 기능의 핵심 코어는 Operational Transformation(OT)의 한계를 극복한 <strong>CRDT(Conflict-free Replicated Data Type)</strong> 알고리즘 기반의 Yjs 엔진입니다. 네트워크 지연(Latency)이나 오프라인 상태에서도 충돌 없는 상태 병합(Deterministic State Merging)을 보장합니다.</p>
+      <ul>
+        <li><strong>Vector Clocks & State Vectors:</strong> 클라이언트 간의 이벤트 순서를 보장하고 누락된 델타(Delta) 업데이트만 선별적으로 동기화하여 네트워크 페이로드를 최소화합니다.</li>
+        <li><strong>Awareness Protocol:</strong> 마우스 커서 위치, 텍스트 Selection 등 비영구적 상태(Ephemeral State)는 CRDT Document에 병합되지 않고 별도의 Awareness 채널을 통해 메모리 레벨에서만 브로드캐스트하여 GC(Garbage Collection) 부하를 방지합니다.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>3. Technical Trade-offs & Engineering Resolutions</h2>
+      <p>단일 페이지 애플리케이션(SPA) 내에서 다중 창(Multi-window) 시뮬레이션과 P2P 네트워킹을 구현하는 과정에서 발생한 기술적 병목(Bottlenecks)과 이를 타개한 엔지니어링 의사결정(Engineering Decisions)입니다.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>도메인 (Domain)</th>
+            <th>구현 아키텍처 (Architecture)</th>
+            <th>기술적 한계 / Trade-off</th>
+            <th>해결 전략 및 Fallback (Resolution)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>State Management</strong></td>
+            <td>CRDT 기반 P2P 상태 동기화 (Yjs)</td>
+            <td>History Append-only 특성으로 인해 시간이 지남에 따라 State Vector의 용량이 선형적으로 증가하여 브라우저의 Heap Memory OOM(Out of Memory) 유발 위험.</td>
+            <td><strong>[State Compaction]</strong> 주기적으로 <code>Y.encodeStateAsUpdate()</code>를 호출하여 최적화된 바이너리 스냅샷을 IndexedDB에 압축 저장(Snapshotting)하고, 불필요한 Operation History는 GC를 통해 메모리에서 해제하는 로직 구현.</td>
+          </tr>
+          <tr>
+            <td><strong>Security</strong></td>
+            <td>OS Native Keychain 연동</td>
+            <td>Yjs의 특성상 로컬 State가 클러스터 내 타 노드로 자동 브로드캐스트됨. 사용자 개인의 API Key가 Yjs 룸을 통해 타인에게 유출될 구조적 취약성 존재.</td>
+            <td><strong>[Schema Isolation]</strong> 협업을 위한 Shared Schema와 개인화 설정을 위한 Local Schema를 물리적으로 분리. Credentials 데이터는 Yjs Provider 인스턴스에 주입하지 않고 브라우저 Local Context에서만 렌더링되도록 격리(Air-gapped) 아키텍처 적용.</td>
+          </tr>
+          <tr>
+            <td><strong>UI/UX (DOM)</strong></td>
+            <td>Iframe 기반 플러그인 샌드박싱</td>
+            <td>Iframe 내부에 마우스 커서가 진입할 경우 호스트 Window(부모 DOM)가 `mousemove`, `mouseup` 이벤트를 유실하여 윈도우 리사이징/드래깅이 멈추는 UX 단절 현상(Event Swallowing).</td>
+            <td><strong>[Event Tunneling / Pointer Guard]</strong> Drag 시작점(<code>mousedown</code>) 이벤트 포착 시 즉각적으로 전체 Iframe에 <code>pointer-events: none</code> CSS 속성을 주입하는 Guard Layer 활성화. Drag 종료(<code>mouseup</code>) 시 복구하여 부드러운 60fps 창 제어 구현.</td>
+          </tr>
+          <tr>
+            <td><strong>Network (WebRTC)</strong></td>
+            <td>Mesh Topology P2P Audio</td>
+            <td>Symmetric NAT 또는 엄격한 기업용 방화벽 환경에서 피어 간 직접 연결(STUN) 실패에 따른 통신 단절 문제.</td>
+            <td><strong>[Adaptive ICE Routing]</strong> ICE Candidate 수집 과정에서 STUN 연결 실패 Timeout 감지 시, 즉각적으로 TURN(Traversal Using Relays around NAT) 서버로 패킷을 릴레이하는 Fallback 라우팅 로직 구현. 레이턴시 트레이드오프(Latency Trade-off)를 감수하고 Connectivity 99.9% 보장.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>4. Paradigm Shift: Unified Context Architecture</h2>
+      <p>AMEVA Workstation의 궁극적인 존재 이유는 파편화된 워크플로우의 통합에 있습니다. 이는 단순한 UI/UX의 개선이 아닌, 작업자의 인지 부하(Cognitive Load)를 줄이는 구조적 혁신입니다.</p>
+      <h3>[As-Is] Fragmented Application Ecosystem (파편화된 생태계)</h3>
+      <p>현대의 지식 근로자는 업무 수행을 위해 브라우저 탭, 슬랙, 노션, 터미널 등 평균 10~15개의 분리된 애플리케이션 창을 전환(Context Switching)하며 사용합니다. 연구 결과에 따르면 이러한 컨텍스트 스위칭은 집중력 회복에 평균 23분을 소모하게 하며 치명적인 생산성 저하를 야기합니다.</p>
+      
+      <h3>[To-Be] AMEVA Unified Micro-frontends (단일 통합 컨텍스트)</h3>
+      <p>AMEVA는 <strong>Micro-frontends Architecture</strong>를 차용하여 모든 도구를 단일 워크스테이션 내의 독립적인 <code>Plugin Container</code>로 로드합니다. 사용자는 OS의 창을 전환할 필요 없이, 마켓플레이스에서 PDF RAG, Kanban, Python Console 등의 플러그인을 동적으로 메모리에 적재(Lazy-load)하여 무한한 캔버스 위에 자유롭게 배치합니다. 이는 운영체제 위의 운영체제(OS within OS)로써, 데이터와 도구가 하나의 흐름 속에서 상호작용하는 진정한 의미의 <strong>Zero-Context Switching</strong> 환경을 달성합니다.</p>
+    </div>
+  </div>
+</body>
+</html>
