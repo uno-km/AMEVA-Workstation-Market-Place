@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Network, ZoomIn, ZoomOut, Maximize, Play, RotateCw, Download } from 'lucide-react';
+import { Network, ZoomIn, ZoomOut, Maximize, Play, RotateCw, Download, RefreshCw } from 'lucide-react';
 
 interface MindMapNode {
   id: string;
@@ -20,17 +20,43 @@ export function MindMapPlugin() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStart = useRef({ x: 0, y: 0 });
+  
+  // Drag-and-drop state for individual nodes
+  const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
+
+  // Map viewport pan state
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef({ x: 0, y: 0 });
+
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  // Extract plain text from block content
+  // Extract plain text from block content safely
   const getBlockText = (block: any): string => {
+    if (!block) return '';
     if (typeof block.content === 'string') return block.content;
     if (Array.isArray(block.content)) {
-      return block.content.map((c: any) => c.text || '').join('');
+      return block.content.map((c: any) => c?.text || '').join('');
     }
     return '';
+  };
+
+  // Helper to fetch persistent node coordinates from localStorage
+  const getNodeCoordinates = (nodeId: string, defaultX: number, defaultY: number): { x: number; y: number } => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    const tabId = amevaCore?.useWorkspaceStore?.getState()?.activeTabId || 'default';
+    const cached = localStorage.getItem(`mindmap-pos-${tabId}-${nodeId}`);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('[MindMapPlugin] Error parsing cached coords:', e);
+      }
+    }
+    return { x: defaultX, y: defaultY };
   };
 
   // Build the hierarchical mind map tree dynamically from active editor document
@@ -57,21 +83,25 @@ export function MindMapPlugin() {
        */
       const paragraphs = blocks.filter((b: any) => b.type === 'paragraph').slice(0, 5);
       if (paragraphs.length === 0) {
+        const coords = getNodeCoordinates('root', 250, 220);
         return {
-          newNodes: [{ id: 'root', label: '빈 문서 (본문을 작성해보세요)', x: 250, y: 220, depth: 0 }],
+          newNodes: [{ id: 'root', label: '빈 문서 (본문을 작성해보세요)', x: coords.x, y: coords.y, depth: 0 }],
           newEdges: []
         };
       }
       
-      const newNodes: MindMapNode[] = [{ id: 'root', label: '문서 개요', x: 250, y: 220, depth: 0 }];
+      const rootCoords = getNodeCoordinates('root', 250, 220);
+      const newNodes: MindMapNode[] = [{ id: 'root', label: '문서 개요', x: rootCoords.x, y: rootCoords.y, depth: 0 }];
       const newEdges: MindMapEdge[] = [];
       
       paragraphs.forEach((p: any, idx: number) => {
         const text = getBlockText(p).slice(0, 16) || `본문 단락 #${idx + 1}`;
         const angle = (idx * 2 * Math.PI) / paragraphs.length;
-        const x = 250 + 130 * Math.cos(angle);
-        const y = 220 + 130 * Math.sin(angle);
-        newNodes.push({ id: p.id, label: text, x, y, depth: 1 });
+        const defaultX = 250 + 130 * Math.cos(angle);
+        const defaultY = 220 + 130 * Math.sin(angle);
+        const coords = getNodeCoordinates(p.id, defaultX, defaultY);
+        
+        newNodes.push({ id: p.id, label: text, x: coords.x, y: coords.y, depth: 1 });
         newEdges.push({ source: 'root', target: p.id });
       });
       return { newNodes, newEdges };
@@ -104,7 +134,8 @@ export function MindMapPlugin() {
       rootLabel = getBlockText(headings[0]).slice(0, 18);
     }
 
-    newNodes.push({ id: rootId, label: rootLabel, x: centerX, y: centerY, depth: 0 });
+    const rootCoords = getNodeCoordinates(rootId, centerX, centerY);
+    newNodes.push({ id: rootId, label: rootLabel, x: rootCoords.x, y: rootCoords.y, depth: 0 });
 
     const l1Headings = h1s.length > 0 ? h2s : headings.filter((h: any) => h.id !== rootId && h.props?.level === 2);
     const l2Headings = h1s.length > 0 ? h3s : headings.filter((h: any) => h.id !== rootId && h.props?.level === 3);
@@ -112,10 +143,11 @@ export function MindMapPlugin() {
     if (l1Headings.length > 0) {
       l1Headings.forEach((h: any, idx: number) => {
         const angle = (idx * 2 * Math.PI) / l1Headings.length;
-        const x = centerX + 150 * Math.cos(angle);
-        const y = centerY + 150 * Math.sin(angle);
+        const defaultX = centerX + 150 * Math.cos(angle);
+        const defaultY = centerY + 150 * Math.sin(angle);
+        const coords = getNodeCoordinates(h.id, defaultX, defaultY);
         
-        newNodes.push({ id: h.id, label: getBlockText(h).slice(0, 15), x, y, depth: 1 });
+        newNodes.push({ id: h.id, label: getBlockText(h).slice(0, 15), x: coords.x, y: coords.y, depth: 1 });
         newEdges.push({ source: rootId, target: h.id });
 
         // Find H3 items under this H2
@@ -129,9 +161,11 @@ export function MindMapPlugin() {
           subHeadings.forEach((sub: any, subIdx: number) => {
             const spread = Math.PI / 2.5; // Spread arc (around 72 deg)
             const subAngle = angle + (subIdx - (subHeadings.length - 1) / 2) * (spread / Math.max(1, subHeadings.length - 1));
-            const subX = x + 90 * Math.cos(subAngle);
-            const subY = y + 90 * Math.sin(subAngle);
-            newNodes.push({ id: sub.id, label: getBlockText(sub).slice(0, 12), x: subX, y: subY, depth: 2 });
+            const defaultSubX = coords.x + 90 * Math.cos(subAngle);
+            const defaultSubY = coords.y + 90 * Math.sin(subAngle);
+            const subCoords = getNodeCoordinates(sub.id, defaultSubX, defaultSubY);
+            
+            newNodes.push({ id: sub.id, label: getBlockText(sub).slice(0, 12), x: subCoords.x, y: subCoords.y, depth: 2 });
             newEdges.push({ source: h.id, target: sub.id });
           });
         }
@@ -149,6 +183,21 @@ export function MindMapPlugin() {
       setEdges(newEdges);
       setIsGenerating(false);
     }, 400);
+  };
+
+  // Reset all saved positions back to default layout coordinates
+  const handleResetPositions = () => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    const tabId = amevaCore?.useWorkspaceStore?.getState()?.activeTabId || 'default';
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(`mindmap-pos-${tabId}-`)) {
+        localStorage.removeItem(key);
+      }
+    }
+    const { newNodes, newEdges } = buildMindMap();
+    setNodes(newNodes);
+    setEdges(newEdges);
   };
 
   // Sync / Listen to Editor changes reactively using global keyup/mouseup hooks
@@ -173,6 +222,7 @@ export function MindMapPlugin() {
 
   // Jump editor cursor and focus to corresponding block in editor
   const handleNodeClick = (nodeId: string) => {
+    if (draggedNodeId) return; // Ignore clicks during drag
     const amevaCore = (window as any).AMEVA_CORE;
     if (amevaCore && amevaCore.editor && nodeId !== 'root') {
       try {
@@ -184,23 +234,67 @@ export function MindMapPlugin() {
     }
   };
 
-  // Panning/Zooming handlers
+  // Node Drag and Drop Math Handlers
+  const handleNodeDragStart = (e: React.MouseEvent, nodeId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!svgRef.current) return;
+    
+    const rect = svgRef.current.getBoundingClientRect();
+    const svgMouseX = (e.clientX - rect.left - pan.x) / zoom;
+    const svgMouseY = (e.clientY - rect.top - pan.y) / zoom;
+    
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) {
+      dragOffset.current = {
+        x: svgMouseX - node.x,
+        y: svgMouseY - node.y
+      };
+      setDraggedNodeId(nodeId);
+    }
+  };
+
+  // Viewport Panning handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only left click drag
-    setIsDragging(true);
-    dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+    setIsPanning(true);
+    panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (draggedNodeId) {
+      // Execute node drag movement
+      if (!svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const svgMouseX = (e.clientX - rect.left - pan.x) / zoom;
+      const svgMouseY = (e.clientY - rect.top - pan.y) / zoom;
+      
+      const targetX = svgMouseX - dragOffset.current.x;
+      const targetY = svgMouseY - dragOffset.current.y;
+      
+      setNodes(prev => prev.map(n => {
+        if (n.id === draggedNodeId) {
+          const updated = { ...n, x: targetX, y: targetY };
+          const amevaCore = (window as any).AMEVA_CORE;
+          const tabId = amevaCore?.useWorkspaceStore?.getState()?.activeTabId || 'default';
+          localStorage.setItem(`mindmap-pos-${tabId}-${draggedNodeId}`, JSON.stringify({ x: targetX, y: targetY }));
+          return updated;
+        }
+        return n;
+      }));
+      return;
+    }
+
+    if (!isPanning) return;
     setPan({
-      x: e.clientX - dragStart.current.x,
-      y: e.clientY - dragStart.current.y
+      x: e.clientX - panStart.current.x,
+      y: e.clientY - panStart.current.y
     });
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
+    setDraggedNodeId(null);
+    setIsPanning(false);
   };
 
   const zoomIn = () => setZoom(z => Math.min(2.5, z + 0.15));
@@ -236,10 +330,29 @@ export function MindMapPlugin() {
         <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
           <Network size={16} color="#fff" />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, letterSpacing: '0.3px', color: '#fff' }}>마인드맵 분석기</h2>
-          <p style={{ fontSize: '10px', color: '#9ca3af', margin: 0 }}>문서 구조를 인식해 계층적 노드 맵으로 시각화</p>
+          <p style={{ fontSize: '10px', color: '#9ca3af', margin: 0 }}>노드를 자유롭게 배치할 수 있으며 위치가 자동 저장됩니다</p>
         </div>
+        <button 
+          title="노드 배치 기본값 복원" 
+          onClick={handleResetPositions} 
+          style={{ 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.3)', 
+            color: '#ef4444', 
+            padding: '4px 8px', 
+            borderRadius: '6px', 
+            fontSize: '10px', 
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <RefreshCw size={10} /> 배치 초기화
+        </button>
       </div>
 
       <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
@@ -282,7 +395,7 @@ export function MindMapPlugin() {
               </button>
             </div>
           ) : (
-            <div style={{ flex: 1, position: 'relative', cursor: isDragging ? 'grabbing' : 'grab' }}>
+            <div style={{ flex: 1, position: 'relative', cursor: draggedNodeId ? 'grabbing' : isPanning ? 'grabbing' : 'grab' }}>
               <svg 
                 ref={svgRef}
                 width="100%" 
@@ -322,9 +435,10 @@ export function MindMapPlugin() {
                       <g 
                         key={n.id} 
                         transform={`translate(${n.x}, ${n.y})`} 
+                        onMouseDown={(e) => handleNodeDragStart(e, n.id)}
                         onClick={() => handleNodeClick(n.id)}
                         style={{ cursor: 'pointer' }}
-                        title={n.id !== 'root' ? "클릭 시 에디터 본문 해당 구절로 커서 이동" : ""}
+                        title={n.id !== 'root' ? "드래그하여 배치 이동 / 클릭 시 본문 이동" : ""}
                       >
                         <rect 
                           x="-58" 

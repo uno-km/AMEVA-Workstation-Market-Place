@@ -267,7 +267,7 @@ export default function AmevaBrowserView() {
                     } else if (tag === 'li') {
                       markdown += '* ' + text + '\\n';
                     } else if (tag === 'pre') {
-                      markdown += '\\`\\`\\`\\n' + text + '\\n\\`\\`\\`\\n\\n';
+                      markdown += '\\x60\\x60\\x60\\n' + text + '\\n\\x60\\x60\\x60\\n\\n';
                     }
                   });
                   
