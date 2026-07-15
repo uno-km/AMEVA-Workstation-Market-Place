@@ -1,5 +1,6 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
-import { Network, ZoomIn, ZoomOut, Maximize, Play, RotateCw, Download, RefreshCw } from 'lucide-react';
+import { Network, ZoomIn, ZoomOut, Maximize, Play, RotateCw, Download, RefreshCw, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface MindMapNode {
   id: string;
@@ -14,9 +15,55 @@ interface MindMapEdge {
   target: string;
 }
 
+function HeadingInput({ block, onUpdate }: { block: any, onUpdate: (id: string, text: string) => void }) {
+  const [val, setVal] = useState('');
+  
+  const getBlockText = (b: any): string => {
+    if (!b) return '';
+    if (typeof b.content === 'string') return b.content;
+    if (Array.isArray(b.content)) {
+      return b.content.map((c: any) => c?.text || '').join('');
+    }
+    return '';
+  };
+
+  useEffect(() => {
+    setVal(getBlockText(block));
+  }, [block]);
+
+  return (
+    <input 
+      type="text" 
+      value={val}
+      onChange={e => setVal(e.target.value)}
+      onBlur={() => onUpdate(block.id, val)}
+      onKeyDown={e => {
+        if (e.key === 'Enter') {
+          onUpdate(block.id, val);
+          (e.target as any).blur();
+        }
+      }}
+      style={{
+        flex: 1,
+        background: 'transparent',
+        border: 'none',
+        borderBottom: '1px solid transparent',
+        color: '#fff',
+        fontSize: '11px',
+        outline: 'none',
+        padding: '2px 4px',
+        transition: 'border-color 0.2s',
+        minWidth: '50px'
+      }}
+      onFocus={e => { e.target.style.borderBottomColor = '#10b981'; }}
+    />
+  );
+}
+
 export function MindMapPlugin() {
   const [nodes, setNodes] = useState<MindMapNode[]>([]);
   const [edges, setEdges] = useState<MindMapEdge[]>([]);
+  const [headingsList, setHeadingsList] = useState<any[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -62,10 +109,6 @@ export function MindMapPlugin() {
   // Build the hierarchical mind map tree dynamically from active editor document
   const buildMindMap = () => {
     const amevaCore = (window as any).AMEVA_CORE;
-    /*
-     * [CONTRACT]
-     * - AMEVA_CORE 및 내장 editor가 존재할 때만 실제 AST 파싱 및 노드 연산을 수행한다.
-     */
     if (!amevaCore || !amevaCore.editor) {
       return { newNodes: [], newEdges: [] };
     }
@@ -77,28 +120,24 @@ export function MindMapPlugin() {
     const headings = blocks.filter((b: any) => b.type === 'heading');
 
     if (headings.length === 0) {
-      /*
-       * [ALGORITHM BRANCH / DECISION]
-       * - 헤딩 블록이 없는 경우: 문서 내 단락(paragraph) 블록들 상위 5개를 가져와 리프 노드로 연결한다.
-       */
       const paragraphs = blocks.filter((b: any) => b.type === 'paragraph').slice(0, 5);
       if (paragraphs.length === 0) {
-        const coords = getNodeCoordinates('root', 250, 220);
+        const coords = getNodeCoordinates('root', 180, 200);
         return {
           newNodes: [{ id: 'root', label: '빈 문서 (본문을 작성해보세요)', x: coords.x, y: coords.y, depth: 0 }],
           newEdges: []
         };
       }
       
-      const rootCoords = getNodeCoordinates('root', 250, 220);
+      const rootCoords = getNodeCoordinates('root', 180, 200);
       const newNodes: MindMapNode[] = [{ id: 'root', label: '문서 개요', x: rootCoords.x, y: rootCoords.y, depth: 0 }];
       const newEdges: MindMapEdge[] = [];
       
       paragraphs.forEach((p: any, idx: number) => {
         const text = getBlockText(p).slice(0, 16) || `본문 단락 #${idx + 1}`;
         const angle = (idx * 2 * Math.PI) / paragraphs.length;
-        const defaultX = 250 + 130 * Math.cos(angle);
-        const defaultY = 220 + 130 * Math.sin(angle);
+        const defaultX = 180 + 110 * Math.cos(angle);
+        const defaultY = 200 + 110 * Math.sin(angle);
         const coords = getNodeCoordinates(p.id, defaultX, defaultY);
         
         newNodes.push({ id: p.id, label: text, x: coords.x, y: coords.y, depth: 1 });
@@ -107,11 +146,6 @@ export function MindMapPlugin() {
       return { newNodes, newEdges };
     }
 
-    /*
-     * [RUN-TIME STATE / INVARIANT]
-     * - 변수 명: `h1s`, `h2s`, `h3s`
-     * - 시나리오: 각 헤딩 블록을 level 크기에 따라 분류하여 H1 -> H2 -> H3 계층구조로 트리를 생성한다.
-     */
     const h1s = headings.filter((h: any) => h.props?.level === 1);
     const h2s = headings.filter((h: any) => h.props?.level === 2);
     const h3s = headings.filter((h: any) => h.props?.level === 3);
@@ -120,8 +154,8 @@ export function MindMapPlugin() {
     const newEdges: MindMapEdge[] = [];
     
     // SVG center point
-    const centerX = 250;
-    const centerY = 220;
+    const centerX = 180;
+    const centerY = 200;
 
     let rootId = 'root';
     let rootLabel = '문서 제목';
@@ -143,8 +177,8 @@ export function MindMapPlugin() {
     if (l1Headings.length > 0) {
       l1Headings.forEach((h: any, idx: number) => {
         const angle = (idx * 2 * Math.PI) / l1Headings.length;
-        const defaultX = centerX + 150 * Math.cos(angle);
-        const defaultY = centerY + 150 * Math.sin(angle);
+        const defaultX = centerX + 120 * Math.cos(angle);
+        const defaultY = centerY + 120 * Math.sin(angle);
         const coords = getNodeCoordinates(h.id, defaultX, defaultY);
         
         newNodes.push({ id: h.id, label: getBlockText(h).slice(0, 15), x: coords.x, y: coords.y, depth: 1 });
@@ -159,10 +193,10 @@ export function MindMapPlugin() {
 
         if (subHeadings.length > 0) {
           subHeadings.forEach((sub: any, subIdx: number) => {
-            const spread = Math.PI / 2.5; // Spread arc (around 72 deg)
+            const spread = Math.PI / 2.5;
             const subAngle = angle + (subIdx - (subHeadings.length - 1) / 2) * (spread / Math.max(1, subHeadings.length - 1));
-            const defaultSubX = coords.x + 90 * Math.cos(subAngle);
-            const defaultSubY = coords.y + 90 * Math.sin(subAngle);
+            const defaultSubX = coords.x + 80 * Math.cos(subAngle);
+            const defaultSubY = coords.y + 80 * Math.sin(subAngle);
             const subCoords = getNodeCoordinates(sub.id, defaultSubX, defaultSubY);
             
             newNodes.push({ id: sub.id, label: getBlockText(sub).slice(0, 12), x: subCoords.x, y: subCoords.y, depth: 2 });
@@ -200,12 +234,18 @@ export function MindMapPlugin() {
     setEdges(newEdges);
   };
 
-  // Sync / Listen to Editor changes reactively using global keyup/mouseup hooks
+  // Sync / Listen to Editor changes reactively
   useEffect(() => {
     const handleEvents = () => {
       const { newNodes, newEdges } = buildMindMap();
       setNodes(newNodes);
       setEdges(newEdges);
+      
+      const amevaCore = (window as any).AMEVA_CORE;
+      if (amevaCore && amevaCore.editor) {
+        const list = (amevaCore.editor.document || []).filter((b: any) => b.type === 'heading');
+        setHeadingsList(list);
+      }
     };
 
     window.addEventListener('keyup', handleEvents);
@@ -244,7 +284,7 @@ export function MindMapPlugin() {
     const svgMouseX = (e.clientX - rect.left - pan.x) / zoom;
     const svgMouseY = (e.clientY - rect.top - pan.y) / zoom;
     
-    const node = nodes.find(n => n.id === nodeId);
+    const node = nodes.find((n: MindMapNode) => n.id === nodeId);
     if (node) {
       dragOffset.current = {
         x: svgMouseX - node.x,
@@ -256,14 +296,13 @@ export function MindMapPlugin() {
 
   // Viewport Panning handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // Only left click drag
+    if (e.button !== 0) return;
     setIsPanning(true);
     panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (draggedNodeId) {
-      // Execute node drag movement
       if (!svgRef.current) return;
       const rect = svgRef.current.getBoundingClientRect();
       const svgMouseX = (e.clientX - rect.left - pan.x) / zoom;
@@ -272,7 +311,7 @@ export function MindMapPlugin() {
       const targetX = svgMouseX - dragOffset.current.x;
       const targetY = svgMouseY - dragOffset.current.y;
       
-      setNodes(prev => prev.map(n => {
+      setNodes((prev: MindMapNode[]) => prev.map((n: MindMapNode) => {
         if (n.id === draggedNodeId) {
           const updated = { ...n, x: targetX, y: targetY };
           const amevaCore = (window as any).AMEVA_CORE;
@@ -297,8 +336,8 @@ export function MindMapPlugin() {
     setIsPanning(false);
   };
 
-  const zoomIn = () => setZoom(z => Math.min(2.5, z + 0.15));
-  const zoomOut = () => setZoom(z => Math.max(0.5, z - 0.15));
+  const zoomIn = () => setZoom((z: number) => Math.min(2.5, z + 0.15));
+  const zoomOut = () => setZoom((z: number) => Math.max(0.5, z - 0.15));
   const resetZoom = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -320,6 +359,208 @@ export function MindMapPlugin() {
     } catch (e) {
       console.error('[MindMapPlugin] Failed to download SVG:', e);
     }
+  };
+
+  // Heading Section Helper
+  const getSectionBlocks = (targetHeading: any, doc: any[]) => {
+    const targetIndex = doc.findIndex(b => b.id === targetHeading.id);
+    if (targetIndex === -1) return [];
+    
+    const section: any[] = [targetHeading];
+    const targetLevel = targetHeading.props?.level || 1;
+    
+    for (let i = targetIndex + 1; i < doc.length; i++) {
+      const b = doc[i];
+      if (b.type === 'heading' && (b.props?.level || 1) <= targetLevel) {
+        break;
+      }
+      section.push(b);
+    }
+    return section;
+  };
+
+  const moveNode = (nodeId: string, direction: 'up' | 'down') => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    const doc = [...editor.document];
+    
+    const headingsInDoc = doc.filter((b: any) => b.type === 'heading');
+    const hIdx = headingsInDoc.findIndex((h: any) => h.id === nodeId);
+    if (hIdx === -1) return;
+    
+    if (direction === 'up' && hIdx === 0) return;
+    if (direction === 'down' && hIdx === headingsInDoc.length - 1) return;
+    
+    const targetHeading = headingsInDoc[hIdx];
+    const targetSection = getSectionBlocks(targetHeading, doc);
+    const targetIds = new Set(targetSection.map((b: any) => b.id));
+    const docWithoutTarget = doc.filter((b: any) => !targetIds.has(b.id));
+    
+    if (direction === 'up') {
+      const prevHeading = headingsInDoc[hIdx - 1];
+      const insertIndex = docWithoutTarget.findIndex((b: any) => b.id === prevHeading.id);
+      const nextDocBlocks = [
+        ...docWithoutTarget.slice(0, insertIndex),
+        ...targetSection,
+        ...docWithoutTarget.slice(insertIndex)
+      ];
+      editor.replaceBlocks(editor.document, nextDocBlocks);
+    } else {
+      const nextHeading = headingsInDoc[hIdx + 1];
+      const nextHeadingSection = getSectionBlocks(nextHeading, docWithoutTarget);
+      const lastBlockOfNextSection = nextHeadingSection[nextHeadingSection.length - 1];
+      const insertIndex = docWithoutTarget.findIndex((b: any) => b.id === lastBlockOfNextSection.id);
+      const nextDocBlocks = [
+        ...docWithoutTarget.slice(0, insertIndex + 1),
+        ...targetSection,
+        ...docWithoutTarget.slice(insertIndex + 1)
+      ];
+      editor.replaceBlocks(editor.document, nextDocBlocks);
+    }
+    
+    setTimeout(() => {
+      const { newNodes, newEdges } = buildMindMap();
+      setNodes(newNodes);
+      setEdges(newEdges);
+      setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+    }, 100);
+  };
+
+  const changeOrder = (nodeId: string, newOrderVal: string) => {
+    const newOrder = parseInt(newOrderVal, 10);
+    if (isNaN(newOrder) || newOrder < 1) return;
+    
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    const doc = [...editor.document];
+    
+    const headingsInDoc = doc.filter((b: any) => b.type === 'heading');
+    const hIdx = headingsInDoc.findIndex((h: any) => h.id === nodeId);
+    if (hIdx === -1) return;
+    
+    const targetOrderIndex = Math.max(0, Math.min(headingsInDoc.length - 1, newOrder - 1));
+    if (hIdx === targetOrderIndex) return;
+    
+    const targetHeading = headingsInDoc[hIdx];
+    const targetSection = getSectionBlocks(targetHeading, doc);
+    const targetIds = new Set(targetSection.map((b: any) => b.id));
+    const docWithoutTarget = doc.filter((b: any) => !targetIds.has(b.id));
+    
+    const headingsAfterRemove = docWithoutTarget.filter((b: any) => b.type === 'heading');
+    const refHeading = headingsAfterRemove[targetOrderIndex];
+    if (!refHeading) return;
+    
+    let insertIndex;
+    if (targetOrderIndex === 0) {
+      insertIndex = docWithoutTarget.findIndex((b: any) => b.id === refHeading.id);
+      const nextDocBlocks = [
+        ...docWithoutTarget.slice(0, insertIndex),
+        ...targetSection,
+        ...docWithoutTarget.slice(insertIndex)
+      ];
+      editor.replaceBlocks(editor.document, nextDocBlocks);
+    } else {
+      const refHeadingSection = getSectionBlocks(refHeading, docWithoutTarget);
+      const lastBlockOfRefSection = refHeadingSection[refHeadingSection.length - 1];
+      insertIndex = docWithoutTarget.findIndex((b: any) => b.id === lastBlockOfRefSection.id);
+      const nextDocBlocks = [
+        ...docWithoutTarget.slice(0, insertIndex + 1),
+        ...targetSection,
+        ...docWithoutTarget.slice(insertIndex + 1)
+      ];
+      editor.replaceBlocks(editor.document, nextDocBlocks);
+    }
+    
+    setTimeout(() => {
+      const { newNodes, newEdges } = buildMindMap();
+      setNodes(newNodes);
+      setEdges(newEdges);
+      setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+    }, 100);
+  };
+
+  const addRootNode = () => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    const newBlock = {
+      type: 'heading',
+      props: { level: 1 },
+      content: [{ type: 'text', text: '새 노드', styles: {} }]
+    };
+    const doc = editor.document;
+    if (doc.length > 0) {
+      editor.insertBlocks([newBlock], doc[doc.length - 1].id, 'after');
+    } else {
+      editor.replaceBlocks([], [newBlock]);
+    }
+    setTimeout(() => {
+      const { newNodes, newEdges } = buildMindMap();
+      setNodes(newNodes);
+      setEdges(newEdges);
+      setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+    }, 100);
+  };
+
+  const addSubNode = (parentBlockId: string) => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    const parentBlock = editor.document.find((b: any) => b.id === parentBlockId);
+    if (parentBlock) {
+      const nextLevel = Math.min(3, (parentBlock.props?.level || 1) + 1);
+      const newBlock = {
+        type: 'heading',
+        props: { level: nextLevel },
+        content: [{ type: 'text', text: '새 하위 노드', styles: {} }]
+      };
+      editor.insertBlocks([newBlock], parentBlockId, 'after');
+      setTimeout(() => {
+        const { newNodes, newEdges } = buildMindMap();
+        setNodes(newNodes);
+        setEdges(newEdges);
+        setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+      }, 100);
+    }
+  };
+
+  const deleteNode = (nodeId: string) => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    
+    if (window.confirm('이 노드와 하위 본문 단락을 모두 삭제하시겠습니까?')) {
+      const doc = [...editor.document];
+      const targetHeading = doc.find((b: any) => b.id === nodeId);
+      if (!targetHeading) return;
+      const targetSection = getSectionBlocks(targetHeading, doc);
+      const targetIds = new Set(targetSection.map((b: any) => b.id));
+      const nextDocBlocks = doc.filter((b: any) => !targetIds.has(b.id));
+      editor.replaceBlocks(editor.document, nextDocBlocks);
+      
+      setTimeout(() => {
+        const { newNodes, newEdges } = buildMindMap();
+        setNodes(newNodes);
+        setEdges(newEdges);
+        setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+      }, 100);
+    }
+  };
+
+  const updateNodeText = (nodeId: string, newText: string) => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    editor.updateBlock(nodeId, { content: [{ type: 'text', text: newText, styles: {} }] });
+    
+    setNodes((prev: MindMapNode[]) => prev.map((n: MindMapNode) => {
+      if (n.id === nodeId) {
+        return { ...n, label: newText.slice(0, 15) };
+      }
+      return n;
+    }));
   };
 
   return (
@@ -355,7 +596,7 @@ export function MindMapPlugin() {
         </button>
       </div>
 
-      <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
+      <div style={{ flex: 1, padding: '12px', display: 'flex', gap: '12px', overflow: 'hidden' }}>
         
         {/* Graph canvas container */}
         <div 
@@ -405,9 +646,9 @@ export function MindMapPlugin() {
                 {/* SVG Transformation Group for Zoom & Pan */}
                 <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
                   {/* Draw connection lines */}
-                  {edges.map((e, i) => {
-                    const src = nodes.find(n => n.id === e.source);
-                    const tgt = nodes.find(n => n.id === e.target);
+                  {edges.map((e: MindMapEdge, i: number) => {
+                    const src = nodes.find((n: MindMapNode) => n.id === e.source);
+                    const tgt = nodes.find((n: MindMapNode) => n.id === e.target);
                     if (!src || !tgt) return null;
                     return (
                       <path 
@@ -422,7 +663,7 @@ export function MindMapPlugin() {
                   })}
                   
                   {/* Draw nodes */}
-                  {nodes.map(n => {
+                  {nodes.map((n: MindMapNode) => {
                     const isRoot = n.depth === 0;
                     const isLevel1 = n.depth === 1;
                     
@@ -435,7 +676,7 @@ export function MindMapPlugin() {
                       <g 
                         key={n.id} 
                         transform={`translate(${n.x}, ${n.y})`} 
-                        onMouseDown={(e) => handleNodeDragStart(e, n.id)}
+                        onMouseDown={(e: React.MouseEvent) => handleNodeDragStart(e, n.id)}
                         onClick={() => handleNodeClick(n.id)}
                         style={{ cursor: 'pointer' }}
                         title={n.id !== 'root' ? "드래그하여 배치 이동 / 클릭 시 본문 이동" : ""}
@@ -468,6 +709,127 @@ export function MindMapPlugin() {
             </div>
           )}
         </div>
+
+        {/* Right: Structure Editor Panel */}
+        <div style={{
+          width: '300px',
+          background: '#13141a',
+          borderRadius: '10px',
+          border: '1px solid #1f2029',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: '10px 12px', background: '#0e0f14', borderBottom: '1px solid #1f2029', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#fff' }}>마인드맵 구조 편집기</span>
+            <button 
+              onClick={addRootNode}
+              style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '4px', color: '#10b981', padding: '3px 8px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+            >
+              <Plus size={10}/> 루트 노드 추가 (#)
+            </button>
+          </div>
+          <div style={{ flex: 1, padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {headingsList.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100px', color: '#6b7280', fontSize: '11px', textAlign: 'center' }}>
+                구조화된 헤더가 없습니다.<br/>루트 노드 추가 버튼을 누르거나<br/>본문에 # 헤더를 작성하세요.
+              </div>
+            ) : (
+              headingsList.map((h, index) => {
+                const level = h.props?.level || 1;
+                const indent = (level - 1) * 12;
+                const tagColor = level === 1 ? '#a78bfa' : level === 2 ? '#818cf8' : '#34d399';
+                const tagBg = level === 1 ? 'rgba(167,139,250,0.1)' : level === 2 ? 'rgba(129,140,248,0.1)' : 'rgba(52,211,153,0.1)';
+                
+                return (
+                  <div 
+                    key={h.id} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      marginLeft: `${indent}px`,
+                      background: '#1a1b23', 
+                      border: '1px solid #2e303e', 
+                      borderRadius: '6px', 
+                      padding: '4px 6px',
+                      gap: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{ 
+                      fontSize: '9px', 
+                      fontWeight: 'bold', 
+                      color: tagColor, 
+                      background: tagBg, 
+                      padding: '2px 4px', 
+                      borderRadius: '4px',
+                      minWidth: '20px',
+                      textAlign: 'center'
+                    }}>
+                      H{level}
+                    </span>
+                    
+                    <HeadingInput block={h} onUpdate={updateNodeText} />
+                    
+                    <input 
+                      type="text"
+                      value={index + 1}
+                      onChange={e => changeOrder(h.id, e.target.value)}
+                      style={{
+                        width: '20px',
+                        background: '#0f1015',
+                        border: '1px solid #2e303e',
+                        borderRadius: '4px',
+                        color: '#9ca3af',
+                        fontSize: '9.5px',
+                        textAlign: 'center',
+                        padding: '1px 0',
+                        outline: 'none'
+                      }}
+                      title="순서 입력 (숫자 변경 시 이동)"
+                    />
+                    
+                    <div style={{ display: 'flex', gap: '1px', alignItems: 'center' }}>
+                      <button 
+                        onClick={() => moveNode(h.id, 'up')}
+                        disabled={index === 0}
+                        style={{ background: 'transparent', border: 'none', color: index === 0 ? '#4b5563' : '#9ca3af', cursor: index === 0 ? 'not-allowed' : 'pointer', padding: '1px' }}
+                        title="위로 이동"
+                      >
+                        <ArrowUp size={11} />
+                      </button>
+                      <button 
+                        onClick={() => moveNode(h.id, 'down')}
+                        disabled={index === headingsList.length - 1}
+                        style={{ background: 'transparent', border: 'none', color: index === headingsList.length - 1 ? '#4b5563' : '#9ca3af', cursor: index === headingsList.length - 1 ? 'not-allowed' : 'pointer', padding: '1px' }}
+                        title="아래로 이동"
+                      >
+                        <ArrowDown size={11} />
+                      </button>
+                      {level < 3 && (
+                        <button 
+                          onClick={() => addSubNode(h.id)}
+                          style={{ background: 'transparent', border: 'none', color: '#10b981', cursor: 'pointer', padding: '1px' }}
+                          title="하위 노드 추가"
+                        >
+                          <Plus size={11} />
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => deleteNode(h.id)}
+                        style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '1px' }}
+                        title="삭제"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );

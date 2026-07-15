@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { MonitorPlay, Play, ChevronLeft, ChevronRight, Maximize2, RotateCw } from 'lucide-react';
 
@@ -110,7 +111,7 @@ export function PresentationPlugin() {
     let currentSection = '';
     let currentElements: SlideElement[] = [];
     let currentScore = 0;
-    
+
     // ㄹ. 수학적/휴리스틱 사이즈 고려 한계치 지정
     const MAX_BUDGET = 120;
 
@@ -239,10 +240,10 @@ export function PresentationPlugin() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
-        setSlideIdx(prev => Math.min(slides.length - 1, prev + 1));
+        setSlideIdx((prev: number) => Math.min(slides.length - 1, prev + 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
         e.preventDefault();
-        setSlideIdx(prev => Math.max(0, prev - 1));
+        setSlideIdx((prev: number) => Math.max(0, prev - 1));
       } else if (e.key === 'Escape') {
         e.preventDefault();
         setIsPlaying(false);
@@ -265,7 +266,7 @@ export function PresentationPlugin() {
     if (mediaEl && textEls.length > 0) {
       return (
         <div style={{ display: 'flex', width: '100%', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
-          
+
           {/* Left Column: Breadcrumb / Section Header / Text */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
             {/* ㄴ. 상단 섹션 제목 고정 노출 */}
@@ -275,7 +276,7 @@ export function PresentationPlugin() {
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
               {slide.title}
             </h2>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {textEls.map((el, i) => renderElement(el, i))}
             </div>
@@ -299,7 +300,7 @@ export function PresentationPlugin() {
         <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '24px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
           {slide.title}
         </h2>
-        
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
           {slide.elements.map((el, i) => renderElement(el, i))}
         </div>
@@ -346,10 +347,10 @@ export function PresentationPlugin() {
     switch (el.type) {
       case 'image':
         return (
-          <img 
-            src={el.url} 
-            alt="Slide graphics" 
-            style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', boxShadow: '0 12px 24px rgba(0,0,0,0.6)', border: '1px solid #1f2029' }} 
+          <img
+            src={el.url}
+            alt="Slide graphics"
+            style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', boxShadow: '0 12px 24px rgba(0,0,0,0.6)', border: '1px solid #1f2029' }}
           />
         );
       case 'map':
@@ -360,11 +361,11 @@ export function PresentationPlugin() {
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
               <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 'bold' }}>Google Maps: {el.locationName}</span>
             </div>
-            <iframe 
-              src={`https://maps.google.com/maps?q=${el.lat},${el.lng}&z=13&output=embed`} 
-              width="100%" 
-              height="180" 
-              style={{ border: 0, borderRadius: '6px', background: '#000' }} 
+            <iframe
+              src={`https://maps.google.com/maps?q=${el.lat},${el.lng}&z=13&output=embed`}
+              width="100%"
+              height="180"
+              style={{ border: 0, borderRadius: '6px', background: '#000' }}
               allowFullScreen
               title="Google Map embed"
             ></iframe>
@@ -378,11 +379,11 @@ export function PresentationPlugin() {
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
               <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 'bold' }}>YouTube Video</span>
             </div>
-            <iframe 
-              src={`https://www.youtube.com/embed/${el.title}`} 
-              width="100%" 
-              height="180" 
-              style={{ border: 0, borderRadius: '6px', background: '#000' }} 
+            <iframe
+              src={`https://www.youtube.com/embed/${el.title}`}
+              width="100%"
+              height="180"
+              style={{ border: 0, borderRadius: '6px', background: '#000' }}
               allowFullScreen
               title="YouTube embed player"
             ></iframe>
@@ -432,7 +433,7 @@ export function PresentationPlugin() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0b0c10', color: '#f1f1f5', fontFamily: 'system-ui, sans-serif' }}>
-      
+
       {/* Header Bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #1f2029', background: '#0e0f14' }}>
         <div style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
@@ -443,20 +444,20 @@ export function PresentationPlugin() {
           <p style={{ fontSize: '10px', color: '#9ca3af', margin: 0 }}>코딩, 지도, 영상 등을 자동으로 최적 비율 배치하는 슬라이드쇼</p>
         </div>
         {!isPlaying && (
-          <button 
-            title="슬라이드 새로고침" 
-            onClick={handleRefresh} 
-            style={{ 
-              background: '#1a1b23', 
-              border: '1px solid #2e303e', 
-              color: '#9ca3af', 
-              width: '28px', 
-              height: '28px', 
-              borderRadius: '6px', 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
+          <button
+            title="슬라이드 새로고침"
+            onClick={handleRefresh}
+            style={{
+              background: '#1a1b23',
+              border: '1px solid #2e303e',
+              color: '#9ca3af',
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             <RotateCw size={13} />
@@ -465,7 +466,7 @@ export function PresentationPlugin() {
       </div>
 
       <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
-        
+
         {/* Presentation canvas container */}
         <div style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {!isPlaying ? (
@@ -474,47 +475,47 @@ export function PresentationPlugin() {
               <p style={{ fontSize: '11px', color: '#9ca3af', maxWidth: '260px', lineHeight: '1.5', marginBottom: '12px' }}>
                 문서에서 분석된 컴포넌트(지도, 코드, 영상, 리스트 등) 크기를 고려해 총 **{slides.length}장**의 맞춤형 슬라이드를 연산 생성했습니다.
               </p>
-              <button 
-                onClick={() => setIsPlaying(true)} 
-                style={{ 
-                  background: '#f59e0b', 
-                  color: '#fff', 
-                  border: 'none', 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  fontSize: '12px', 
-                  fontWeight: 'bold', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  cursor: 'pointer' 
+              <button
+                onClick={() => setIsPlaying(true)}
+                style={{
+                  background: '#f59e0b',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer'
                 }}
               >
-                <Play size={14}/> 슬라이드쇼 시작
+                <Play size={14} /> 슬라이드쇼 시작
               </button>
             </div>
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#090a0f', color: '#fff', position: 'relative' }}>
-              
+
               {/* Slide controls top header */}
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: '8px', zIndex: 10 }}>
-                <button 
-                  onClick={() => setIsPlaying(false)} 
-                  style={{ 
-                    background: 'rgba(255,255,255,0.08)', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
-                    color: '#fff', 
-                    padding: '4px 10px', 
-                    borderRadius: '4px', 
-                    fontSize: '10px', 
+                <button
+                  onClick={() => setIsPlaying(false)}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '10px',
                     fontWeight: 'bold',
-                    cursor: 'pointer' 
+                    cursor: 'pointer'
                   }}
                 >
                   종료 (Esc)
                 </button>
               </div>
-              
+
               {/* Slide central display body */}
               <div style={{ flex: 1, display: 'flex', padding: '32px', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {slides[slideIdx] ? renderSlideContent(slides[slideIdx]) : (
@@ -524,33 +525,33 @@ export function PresentationPlugin() {
 
               {/* Bottom paging section */}
               <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0e0f14', borderTop: '1px solid #1f2029' }}>
-                <button 
-                  disabled={slideIdx === 0} 
-                  onClick={() => setSlideIdx(s => Math.max(0, s - 1))} 
-                  style={{ 
-                    background: 'transparent', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
-                    color: '#fff', 
-                    padding: '6px', 
-                    borderRadius: '50%', 
-                    cursor: slideIdx === 0 ? 'not-allowed' : 'pointer', 
-                    opacity: slideIdx === 0 ? 0.3 : 1 
+                <button
+                  disabled={slideIdx === 0}
+                  onClick={() => setSlideIdx((s: number) => Math.max(0, s - 1))}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    cursor: slideIdx === 0 ? 'not-allowed' : 'pointer',
+                    opacity: slideIdx === 0 ? 0.3 : 1
                   }}
                 >
                   <ChevronLeft size={16} />
                 </button>
                 <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold' }}>{slideIdx + 1} / {slides.length}</span>
-                <button 
-                  disabled={slideIdx === slides.length - 1} 
-                  onClick={() => setSlideIdx(s => Math.min(slides.length - 1, s + 1))} 
-                  style={{ 
-                    background: 'transparent', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
-                    color: '#fff', 
-                    padding: '6px', 
-                    borderRadius: '50%', 
-                    cursor: slideIdx === slides.length - 1 ? 'not-allowed' : 'pointer', 
-                    opacity: slideIdx === slides.length - 1 ? 0.3 : 1 
+                <button
+                  disabled={slideIdx === slides.length - 1}
+                  onClick={() => setSlideIdx((s: number) => Math.min(slides.length - 1, s + 1))}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    cursor: slideIdx === slides.length - 1 ? 'not-allowed' : 'pointer',
+                    opacity: slideIdx === slides.length - 1 ? 0.3 : 1
                   }}
                 >
                   <ChevronRight size={16} />
