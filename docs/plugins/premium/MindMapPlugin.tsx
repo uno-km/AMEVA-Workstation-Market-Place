@@ -78,6 +78,30 @@ export function MindMapPlugin() {
 
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  const [rightPanelWidth, setRightPanelWidth] = useState(300);
+  const isResizing = useRef(false);
+
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.addEventListener('mousemove', handleResize);
+    document.addEventListener('mouseup', stopResize);
+  };
+
+  const handleResize = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX - 24;
+    if (newWidth > 180 && newWidth < 900) {
+      setRightPanelWidth(newWidth);
+    }
+  };
+
+  const stopResize = () => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', handleResize);
+    document.removeEventListener('mouseup', stopResize);
+  };
+
   // Extract plain text from block content safely
   const getBlockText = (block: any): string => {
     if (!block) return '';
@@ -120,13 +144,9 @@ export function MindMapPlugin() {
     const headings = blocks.filter((b: any) => b.type === 'heading');
 
     if (headings.length === 0) {
-      const paragraphs = blocks.filter((b: any) => b.type === 'paragraph').slice(0, 5);
+      const paragraphs = blocks.filter((b: any) => b.type === 'paragraph' && getBlockText(b).trim() !== '').slice(0, 5);
       if (paragraphs.length === 0) {
-        const coords = getNodeCoordinates('root', 180, 200);
-        return {
-          newNodes: [{ id: 'root', label: '빈 문서 (본문을 작성해보세요)', x: coords.x, y: coords.y, depth: 0 }],
-          newEdges: []
-        };
+        return { newNodes: [], newEdges: [] };
       }
       
       const rootCoords = getNodeCoordinates('root', 180, 200);
@@ -236,7 +256,12 @@ export function MindMapPlugin() {
 
   // Sync / Listen to Editor changes reactively
   useEffect(() => {
-    const handleEvents = () => {
+    const handleEvents = (e?: KeyboardEvent | MouseEvent) => {
+      // Ignore global keyup/mouseup events originating from inputs/textareas to allow typing in our structure editor
+      if (e && e.target && ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA')) {
+        return;
+      }
+      
       const { newNodes, newEdges } = buildMindMap();
       setNodes(newNodes);
       setEdges(newEdges);
@@ -389,17 +414,22 @@ export function MindMapPlugin() {
     const hIdx = headingsInDoc.findIndex((h: any) => h.id === nodeId);
     if (hIdx === -1) return;
     
-    if (direction === 'up' && hIdx === 0) return;
-    if (direction === 'down' && hIdx === headingsInDoc.length - 1) return;
-    
     const targetHeading = headingsInDoc[hIdx];
     const targetSection = getSectionBlocks(targetHeading, doc);
     const targetIds = new Set(targetSection.map((b: any) => b.id));
     const docWithoutTarget = doc.filter((b: any) => !targetIds.has(b.id));
     
+    const targetIndexInDoc = doc.findIndex((b: any) => b.id === targetHeading.id);
+
     if (direction === 'up') {
-      const prevHeading = headingsInDoc[hIdx - 1];
+      // Find the last heading in docWithoutTarget that lies before targetIndexInDoc
+      const prevHeadings = docWithoutTarget.slice(0, targetIndexInDoc).filter((b: any) => b.type === 'heading');
+      if (prevHeadings.length === 0) return; // Cannot move up
+      
+      const prevHeading = prevHeadings[prevHeadings.length - 1];
       const insertIndex = docWithoutTarget.findIndex((b: any) => b.id === prevHeading.id);
+      if (insertIndex === -1) return;
+      
       const nextDocBlocks = [
         ...docWithoutTarget.slice(0, insertIndex),
         ...targetSection,
@@ -407,10 +437,17 @@ export function MindMapPlugin() {
       ];
       editor.replaceBlocks(editor.document, nextDocBlocks);
     } else {
-      const nextHeading = headingsInDoc[hIdx + 1];
+      // Find the first heading in docWithoutTarget that lies after targetIndexInDoc
+      const nextHeading = docWithoutTarget.slice(targetIndexInDoc).find((b: any) => b.type === 'heading');
+      if (!nextHeading) return; // Cannot move down
+      
       const nextHeadingSection = getSectionBlocks(nextHeading, docWithoutTarget);
+      if (nextHeadingSection.length === 0) return;
+      
       const lastBlockOfNextSection = nextHeadingSection[nextHeadingSection.length - 1];
       const insertIndex = docWithoutTarget.findIndex((b: any) => b.id === lastBlockOfNextSection.id);
+      if (insertIndex === -1) return;
+      
       const nextDocBlocks = [
         ...docWithoutTarget.slice(0, insertIndex + 1),
         ...targetSection,
@@ -449,12 +486,14 @@ export function MindMapPlugin() {
     const docWithoutTarget = doc.filter((b: any) => !targetIds.has(b.id));
     
     const headingsAfterRemove = docWithoutTarget.filter((b: any) => b.type === 'heading');
-    const refHeading = headingsAfterRemove[targetOrderIndex];
+    const safeTargetIndex = Math.max(0, Math.min(headingsAfterRemove.length - 1, targetOrderIndex));
+    const refHeading = headingsAfterRemove[safeTargetIndex];
     if (!refHeading) return;
     
     let insertIndex;
-    if (targetOrderIndex === 0) {
+    if (safeTargetIndex === 0 && targetOrderIndex <= hIdx) {
       insertIndex = docWithoutTarget.findIndex((b: any) => b.id === refHeading.id);
+      if (insertIndex === -1) return;
       const nextDocBlocks = [
         ...docWithoutTarget.slice(0, insertIndex),
         ...targetSection,
@@ -463,8 +502,10 @@ export function MindMapPlugin() {
       editor.replaceBlocks(editor.document, nextDocBlocks);
     } else {
       const refHeadingSection = getSectionBlocks(refHeading, docWithoutTarget);
+      if (refHeadingSection.length === 0) return;
       const lastBlockOfRefSection = refHeadingSection[refHeadingSection.length - 1];
       insertIndex = docWithoutTarget.findIndex((b: any) => b.id === lastBlockOfRefSection.id);
+      if (insertIndex === -1) return;
       const nextDocBlocks = [
         ...docWithoutTarget.slice(0, insertIndex + 1),
         ...targetSection,
@@ -710,9 +751,25 @@ export function MindMapPlugin() {
           )}
         </div>
 
+        {/* Resizable Divider Handle */}
+        <div 
+          onMouseDown={startResize}
+          style={{
+            width: '6px',
+            cursor: 'col-resize',
+            background: 'transparent',
+            alignSelf: 'stretch',
+            transition: 'background 0.2s',
+            zIndex: 10,
+            borderRadius: '3px'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.4)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        />
+
         {/* Right: Structure Editor Panel */}
         <div style={{
-          width: '300px',
+          width: `${rightPanelWidth}px`,
           background: '#13141a',
           borderRadius: '10px',
           border: '1px solid #1f2029',
