@@ -55,10 +55,38 @@ function CodeRunner({ code, language }) {
     setTimeout(() => {
       const lang = (language || 'javascript').toLowerCase();
       if (lang === 'html') { setOutput('__HTML__'); setRunning(false); return; }
-      if (lang !== 'javascript' && lang !== 'js') {
-        setOutput('[' + (language || 'CODE').toUpperCase() + '] 환경 실행이 완료되었습니다.\n(AMEVA OS 가상 샌드박스)');
+      if (lang === 'sql') {
+        const lines = code.split('\n');
+        let cols = [];
+        let rows = [];
+        // Very basic mock SQL executor for demo purposes
+        for (let line of lines) {
+          if (line.toUpperCase().includes('CREATE TABLE')) {
+            const match = line.match(/\((.+)\)/);
+            if (match) {
+              cols = match[1].split(',').map(c => c.trim().split(' ')[0]);
+            }
+          } else if (line.toUpperCase().includes('INSERT INTO')) {
+            const valsMatch = line.match(/VALUES\s*(.+)/i);
+            if (valsMatch) {
+              const valStr = valsMatch[1];
+              const tuples = valStr.match(/\([^)]+\)/g);
+              if (tuples) {
+                tuples.forEach(t => {
+                  const items = t.replace(/[()']/g, '').split(',').map(s => s.trim());
+                  // if no id was inserted but id exists, shift
+                  if (items.length < cols.length) items.unshift(rows.length + 1);
+                  rows.push(items);
+                });
+              }
+            }
+          }
+        }
+        if (cols.length === 0) { cols = ['id', 'name', 'role', 'level']; rows = [[1, 'Antigravity', 'AI Assistant', 'Legendary'], [2, 'User', 'Fullstack Developer', 'Senior'], [3, 'Explorer', 'WASM Specialist', 'Junior']]; }
+        setOutput(JSON.stringify({ __type: 'TABLE', cols, rows }));
         setRunning(false); return;
       }
+      if (lang !== 'javascript' && lang !== 'js') {
       const logs = []; const orig = console.log;
       console.log = (...a) => logs.push(a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
       try {
@@ -75,10 +103,23 @@ function CodeRunner({ code, language }) {
       <button onClick={run} disabled={running} style={{ background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', color: '#fff', fontSize: '10px', fontWeight: 'bold', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}>
         {running ? 'Running...' : '▶ 코드 실행'}
       </button>
-      {output && (output === '__HTML__'
-        ? <div style={{ marginTop: '10px', padding: '12px', background: '#fff', color: '#000', borderRadius: '6px', textAlign: 'left' }} dangerouslySetInnerHTML={{ __html: code }} />
-        : <pre style={{ marginTop: '10px', padding: '12px', background: '#090a0f', border: '1px solid #1f2029', borderRadius: '6px', color: '#34d399', fontSize: '11px', fontFamily: 'monospace', maxHeight: '200px', overflowY: 'auto', whiteSpace: 'pre-wrap', textAlign: 'left' }}>{output}</pre>
-      )}
+      {output && (() => {
+        if (output === '__HTML__') return <div style={{ marginTop: '10px', padding: '12px', background: '#fff', color: '#000', borderRadius: '6px', textAlign: 'left', maxHeight: '350px', overflowY: 'auto' }} dangerouslySetInnerHTML={{ __html: code }} />;
+        try {
+          const parsed = JSON.parse(output);
+          if (parsed.__type === 'TABLE') {
+            return (
+              <div style={{ marginTop: '10px', overflowX: 'auto', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '6px', padding: '8px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left', color: '#e5e7eb' }}>
+                  <thead><tr>{parsed.cols.map((c, i) => <th key={i} style={{ borderBottom: '2px solid #3b3c4a', padding: '6px 10px', color: '#f59e0b', background: '#13141a' }}>{c}</th>)}</tr></thead>
+                  <tbody>{parsed.rows.map((row, ri) => <tr key={ri} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>{row.map((c, ci) => <td key={ci} style={{ borderBottom: '1px solid #2e303e', padding: '6px 10px' }}>{c}</td>)}</tr>)}</tbody>
+                </table>
+              </div>
+            );
+          }
+        } catch(e) {}
+        return <pre style={{ marginTop: '10px', padding: '12px', background: '#090a0f', border: '1px solid #1f2029', borderRadius: '6px', color: '#34d399', fontSize: '11px', fontFamily: 'monospace', maxHeight: '200px', overflowY: 'auto', whiteSpace: 'pre-wrap', textAlign: 'left' }}>{output}</pre>;
+      })()}
     </div>
   );
 }
@@ -555,20 +596,23 @@ export function PresentationPlugin() {
           </div>
         );
       case 'link':
-        return (
-          <a key={idx} href={el.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'block', width: '100%' }}>
-            <div style={{ background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center' }}>
-              {el.thumbnail
-                ? <img src={el.thumbnail} alt="" style={{ width: '72px', height: '72px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
-                : <div style={{ width: '72px', height: '72px', borderRadius: '6px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '28px' }}>🔗</div>
-              }
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '14px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{el.title}</div>
-                <div style={{ fontSize: '11px', color: '#9ca3af', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{el.description || el.url}</div>
-              </div>
+          <div key={idx} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ width: '100%', height: '300px', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', overflow: 'hidden' }}>
+              <iframe src={el.url} style={{ width: '100%', height: '100%', border: 'none' }} title={el.title} sandbox="allow-same-origin allow-scripts" />
             </div>
-          </a>
-        );
+            <a href={el.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'block', width: '100%' }}>
+              <div style={{ background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                {el.thumbnail
+                  ? <img src={el.thumbnail} alt="" style={{ width: '72px', height: '72px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
+                  : <div style={{ width: '72px', height: '72px', borderRadius: '6px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '28px' }}>🔗</div>
+                }
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{el.title}</div>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{el.description || el.url}</div>
+                </div>
+              </div>
+            </a>
+          </div>
       default: return null;
     }
   };
@@ -667,8 +711,8 @@ export function PresentationPlugin() {
       </div>
 
       {/* Canvas */}
-      <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div ref={containerRef} style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+        <div ref={containerRef} style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {!isPlaying ? (
             /* Preview mode */
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', textAlign: 'center' }}>
@@ -696,7 +740,7 @@ export function PresentationPlugin() {
             </div>
           ) : (
             /* Presentation mode */
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#090a0f', color: '#fff', position: 'relative' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#090a0f', color: '#fff', position: 'relative', minHeight: 0 }}>
               {/* Top controls */}
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: '8px', zIndex: 10 }}>
                 <button onClick={() => setShowToc(p=>!p)} style={btnStyle}>목차</button>
