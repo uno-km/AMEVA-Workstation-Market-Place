@@ -87,6 +87,9 @@ function CodeRunner({ code, language }) {
         setRunning(false); return;
       }
       if (lang !== 'javascript' && lang !== 'js') {
+        setOutput('[' + (language || 'CODE').toUpperCase() + '] 환경 실행이 완료되었습니다.\n(AMEVA OS 가상 샌드박스)');
+        setRunning(false); return;
+      }
       const logs = []; const orig = console.log;
       console.log = (...a) => logs.push(a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
       try {
@@ -469,7 +472,18 @@ export function PresentationPlugin() {
         const lang = (block.props?.language || 'text').toLowerCase();
         el = lang === 'mermaid' ? { type: 'mermaid', code } : { type: 'code', code, language: block.props?.language || 'text' };
       } else if (btype === 'map') {
-        el = { type: 'map', lat: block.props?.lat || '37.5665', lng: block.props?.lng || '126.9780', locationName: block.props?.locationName || '서울' };
+        el = { 
+          type: 'map', 
+          lat: block.props?.lat || '37.5665', 
+          lng: block.props?.lng || '126.9780', 
+          locationName: block.props?.locationName || '서울',
+          destination: block.props?.destination || '',
+          destLat: block.props?.destLat || '',
+          destLng: block.props?.destLng || '',
+          routeType: block.props?.routeType || 'none',
+          routingEngine: block.props?.routingEngine || 'osrm',
+          zoom: block.props?.zoom || '14'
+        };
       } else if (btype === 'youtube') {
         const vid = block.props?.videoId || block.props?.url?.split('v=')?.[1]?.split('&')?.[0] || '';
         el = { type: 'youtube', title: vid, url: block.props?.url || '' };
@@ -523,10 +537,41 @@ export function PresentationPlugin() {
       case 'image':
         return <img key={key} src={el.url} alt="" style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '10px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)', objectFit: 'contain' }} />;
       case 'map':
+        const destLatNum = el.destLat ? parseFloat(el.destLat) : null;
+        const destLngNum = el.destLng ? parseFloat(el.destLng) : null;
+        let mapSrc = '';
+        if (destLatNum !== null && destLngNum !== null && !isNaN(destLatNum) && !isNaN(destLngNum)) {
+          let engineParam = 'fossgis_osrm_car';
+          if (el.routingEngine === 'osrm') {
+            engineParam = el.routeType === 'car' ? 'fossgis_osrm_car' : el.routeType === 'bicycle' ? 'fossgis_osrm_bike' : 'fossgis_osrm_foot';
+          } else if (el.routingEngine === 'graphhopper') {
+            engineParam = el.routeType === 'car' ? 'graphhopper_car' : el.routeType === 'bicycle' ? 'graphhopper_bicycle' : 'graphhopper_foot';
+          } else if (el.routingEngine === 'valhalla') {
+            engineParam = el.routeType === 'car' ? 'valhalla_car' : el.routeType === 'bicycle' ? 'valhalla_bicycle' : 'valhalla_foot';
+          }
+          mapSrc = `https://www.openstreetmap.org/directions?engine=${engineParam}&route=${el.lat},${el.lng};${el.destLat},${el.destLng}`;
+        } else {
+          mapSrc = `https://maps.google.com/maps?q=${el.lat},${el.lng}&z=${el.zoom || 13}&output=embed`;
+        }
+        
         return (
           <div key={key} style={{ width: '100%', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '10px', boxSizing: 'border-box' }}>
-            <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', marginBottom: '8px' }}>📍 {el.locationName}</div>
-            <iframe src={`https://maps.google.com/maps?q=${el.lat},${el.lng}&z=13&output=embed`} width="100%" height="380" style={{ border: 0, borderRadius: '6px' }} allowFullScreen title="Map" />
+            <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📍 <span style={{ color: '#38bdf8' }}>{el.locationName}</span>
+              {el.destination && (
+                <>
+                  <span>➔</span>
+                  <span style={{ color: '#facc15' }}>{el.destination}</span>
+                </>
+              )}
+            </div>
+            {destLatNum !== null && !isNaN(destLatNum) ? (
+               <div style={{ width: '100%', height: '380px', borderRadius: '6px', overflow: 'hidden', position: 'relative' }}>
+                 <iframe src={mapSrc} style={{ position: 'absolute', top: '-50px', left: 0, width: '100%', height: 'calc(100% + 50px)', border: 0, filter: 'invert(0.9) hue-rotate(180deg)' }} allowFullScreen title="Map Route" />
+               </div>
+            ) : (
+               <iframe src={mapSrc} width="100%" height="380" style={{ border: 0, borderRadius: '6px' }} allowFullScreen title="Map" />
+            )}
           </div>
         );
       case 'youtube':

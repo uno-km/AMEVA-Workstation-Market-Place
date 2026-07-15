@@ -680,6 +680,45 @@ function DetailPanel({ q, onClose }: { q: StockQuote; onClose: () => void }) {
    * - 예시: `FinanceDashboardView(...)` 호출 시 런타임 비동기/동기 연쇄 반응 유도.
    */
 export function FinanceDashboardView() {
+  const getMarketStatus = () => {
+    const now = new Date();
+    // 1. 한국 시장 (KST UTC+9)
+    // 개장: 09:00 ~ 15:30 KST (월~금)
+    const kstNow = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    const kstHour = kstNow.getHours();
+    const kstMin = kstNow.getMinutes();
+    const kstDay = kstNow.getDay();
+    const isKrOpen = kstDay >= 1 && kstDay <= 5 && 
+                    (kstHour > 9 || (kstHour === 9 && kstMin >= 0)) && 
+                    (kstHour < 15 || (kstHour === 15 && kstMin < 30));
+
+    // 2. 미국 시장 (EST UTC-5 / EDT UTC-4)
+    // 개장: 09:30 ~ 16:00 EST/EDT (월~금)
+    const estNow = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const estHour = estNow.getHours();
+    const estMin = estNow.getMinutes();
+    const estDay = estNow.getDay();
+    const isUsOpen = estDay >= 1 && estDay <= 5 && 
+                    (estHour > 9 || (estHour === 9 && estMin >= 30)) && 
+                    estHour < 16;
+
+    let text = [];
+    if (isKrOpen) text.push('국장 열림 🟢');
+    if (isUsOpen) text.push('미장 열림 🟢');
+    
+    if (text.length === 0) return <span style={{ fontSize: '9px', color: '#ef4444', marginLeft: '6px', padding: '2px 6px', background: 'rgba(239,68,68,0.1)', borderRadius: '4px' }}>시장 마감 🔴</span>;
+    
+    return (
+      <div style={{ display: 'flex', gap: '4px', marginLeft: '6px' }}>
+        {text.map((t, i) => (
+          <span key={i} style={{ fontSize: '9px', color: '#34d399', padding: '2px 6px', background: 'rgba(52,211,153,0.1)', borderRadius: '4px', fontWeight: 600 }}>
+            {t}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   const [indexQ, setIndexQ] = useState<StockQuote[]>([]);
   const [fxQ, setFxQ] = useState<StockQuote[]>([]);
   const [bondQ, setBondQ] = useState<StockQuote | null>(null);
@@ -866,6 +905,7 @@ export function FinanceDashboardView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <TrendingUp size={13} color="#34d399" />
           <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)' }}>글로벌 금융 대시보드</span>
+          {getMarketStatus()}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {lastUpdated && <span style={{ fontSize: '8.5px', color: 'var(--text-muted)' }}>{lastUpdated} 갱신</span>}
