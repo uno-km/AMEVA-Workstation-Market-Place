@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
-import { Network, ZoomIn, ZoomOut, Maximize, Play, RotateCw, Download, RefreshCw, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Network, ZoomIn, ZoomOut, Maximize, Play, RotateCw, Download, RefreshCw, Plus, Trash2, ArrowUp, ArrowDown, Sparkles, GripVertical } from 'lucide-react';
 
 interface MindMapNode {
   id: string;
@@ -80,6 +80,90 @@ export function MindMapPlugin() {
 
   const [rightPanelWidth, setRightPanelWidth] = useState(300);
   const isResizing = useRef(false);
+
+  // List Reordering and AI Node Expansion States
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [isExpandingNodeId, setIsExpandingNodeId] = useState<string | null>(null);
+
+  const handleListDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleListDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+  };
+
+  const handleListDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+    const targetHeading = headingsList[draggedItemIndex];
+    if (!targetHeading) return;
+    
+    changeOrder(targetHeading.id, String(index + 1));
+    setDraggedItemIndex(null);
+  };
+
+  const handleAIExpandNode = async (nodeId: string, label: string, level: number) => {
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (!amevaCore || !amevaCore.editor) return;
+    const editor = amevaCore.editor;
+    const useLLMInference = amevaCore.useLLMInference;
+    if (!useLLMInference) {
+      alert('AI 엔진을 사용할 수 없습니다.');
+      return;
+    }
+
+    setIsExpandingNodeId(nodeId);
+    try {
+      const prompt = `마인드맵에서 '${label}' 주제(H${level} 레벨)를 확장하기 위해 브레인스토밍을 수행하고 있습니다. 이 주제의 하위 주제 또는 연관된 핵심 아이디어 3개를 리스트 형태로 추천해 주세요. 한국어로 답변해 주세요. 각 연관 아이디어는 한 줄짜리 명사형 문장으로 간결하게 답변해 주세요. 예시:\n1. 하위아이디어 A\n2. 하위아이디어 B\n3. 하위아이디어 C\n\n다른 설명이나 부가적인 말 없이 오직 숫자 번호와 아이디어 제목만 리스트 형태로 답변하세요.`;
+      
+      const { generate } = useLLMInference();
+      const response = await generate(prompt, () => {}, 'You are a helpful mindmap brainstorming assistant.');
+      
+      const lines = response.split('\n').map(l => l.trim()).filter(l => /^\d+\./.test(l));
+      let ideas = lines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean).slice(0, 3);
+      
+      if (ideas.length === 0) {
+        const genericLines = response.split('\n').map(l => l.trim().replace(/^[-*•\d.]\s*/, '')).filter(Boolean);
+        ideas = genericLines.slice(0, 3);
+      }
+
+      if (ideas.length > 0) {
+        const nextLevel = Math.min(3, level + 1);
+        const newBlocks = ideas.map(idea => ({
+          type: 'heading',
+          props: { level: nextLevel },
+          content: [{ type: 'text', text: idea, styles: {} }]
+        }));
+
+        const doc = editor.document;
+        const parentIndex = doc.findIndex((b: any) => b.id === nodeId);
+        if (parentIndex !== -1) {
+          const parentHeading = doc[parentIndex];
+          const section = getSectionBlocks(parentHeading, doc);
+          const lastBlockOfSection = section[section.length - 1];
+          editor.insertBlocks(newBlocks, lastBlockOfSection.id, 'after');
+        } else {
+          editor.insertBlocks(newBlocks, doc[doc.length - 1].id, 'after');
+        }
+
+        setTimeout(() => {
+          const { newNodes, newEdges } = buildMindMap();
+          setNodes(newNodes);
+          setEdges(newEdges);
+          setHeadingsList(editor.document.filter((b: any) => b.type === 'heading'));
+        }, 100);
+      } else {
+        alert('AI가 연관 아이디어를 제안하지 못했습니다. 다시 시도해 주세요.');
+      }
+    } catch (err: any) {
+      console.error('[MindMapPlugin] AI Expansion failed:', err);
+      alert(`AI 확장 실패: ${err.message || err}`);
+    } finally {
+      setIsExpandingNodeId(null);
+    }
+  };
 
   const startResize = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -801,6 +885,8 @@ export function MindMapPlugin() {
                 return (
                   <div 
                     key={h.id} 
+                    onDragOver={(e) => handleListDragOver(e, index)}
+                    onDrop={(e) => handleListDrop(e, index)}
                     style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
@@ -810,9 +896,19 @@ export function MindMapPlugin() {
                       borderRadius: '6px', 
                       padding: '4px 6px',
                       gap: '4px',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      opacity: draggedItemIndex === index ? 0.4 : 1
                     }}
                   >
+                    <div
+                      draggable={true}
+                      onDragStart={(e) => handleListDragStart(e, index)}
+                      style={{ cursor: 'grab', display: 'flex', alignItems: 'center', paddingRight: '2px', color: '#4b5563' }}
+                      title="드래그하여 순서 변경"
+                    >
+                      <GripVertical size={12} />
+                    </div>
+
                     <span style={{ 
                       fontSize: '9px', 
                       fontWeight: 'bold', 
@@ -847,6 +943,14 @@ export function MindMapPlugin() {
                     />
                     
                     <div style={{ display: 'flex', gap: '1px', alignItems: 'center' }}>
+                      <button 
+                        onClick={() => handleAIExpandNode(h.id, getBlockText(h), level)}
+                        disabled={isExpandingNodeId !== null}
+                        style={{ background: 'transparent', border: 'none', color: '#a78bfa', cursor: 'pointer', padding: '1px' }}
+                        title="AI 아이디어 브레인스토밍 확장"
+                      >
+                        {isExpandingNodeId === h.id ? '⏳' : <Sparkles size={11} />}
+                      </button>
                       <button 
                         onClick={() => moveNode(h.id, 'up')}
                         disabled={index === 0}

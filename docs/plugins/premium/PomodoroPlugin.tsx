@@ -34,13 +34,12 @@ export function PomodoroPlugin() {
   const activeSecondsRef = useRef(0);
   const elapsedSecondsRef = useRef(0);
 
-  // Load persistent stats and active timer state on mount
+  // Load persistent stats on mount
   useEffect(() => {
-    // 1. Load cumulative stats
     try {
-      const savedStats = localStorage.getItem('ameva-pomodoro-stats');
-      if (savedStats) {
-        const data = JSON.parse(savedStats);
+      const saved = localStorage.getItem('ameva-pomodoro-stats');
+      if (saved) {
+        const data = JSON.parse(saved);
         if (data.sessions !== undefined) setSessionCount(data.sessions);
         if (data.focusTime !== undefined) setTotalFocusTime(data.focusTime);
         if (data.keystrokes !== undefined) setTotalKeystrokes(data.keystrokes);
@@ -49,76 +48,7 @@ export function PomodoroPlugin() {
     } catch (e) {
       console.error('Failed to load pomodoro stats:', e);
     }
-
-    // 2. Load active running state (restores timer across unmounts/tab closes)
-    try {
-      const savedActive = localStorage.getItem('ameva-pomodoro-active-state');
-      if (savedActive) {
-        const state = JSON.parse(savedActive);
-        setFocusMinutes(state.focusMinutes || 25);
-        setBreakMinutes(state.breakMinutes || 5);
-        setIsBreak(state.isBreak || false);
-        
-        // Restore current session refs
-        keystrokesRef.current = state.currentKeystrokes || 0;
-        clicksRef.current = state.currentClicks || 0;
-        activeSecondsRef.current = state.activeSeconds || 0;
-        elapsedSecondsRef.current = state.elapsedSeconds || 0;
-        
-        setCurrentKeystrokes(keystrokesRef.current);
-        setCurrentClicks(clicksRef.current);
-        
-        if (state.isRunning) {
-          const now = Date.now();
-          const targetEnd = state.targetEndTime || now;
-          const remaining = Math.round((targetEnd - now) / 1000);
-          
-          if (remaining > 0) {
-            setTimeLeft(remaining);
-            setIsRunning(true);
-            
-            // Re-calculate WPM
-            const minutesElapsed = elapsedSecondsRef.current / 60;
-            if (minutesElapsed > 0.05) {
-              setWpm(Math.round((keystrokesRef.current / 5) / minutesElapsed));
-            }
-          } else {
-            // Finished while closed. Set to 0 and isRunning to true to let the timer useEffect handle completion
-            setTimeLeft(0);
-            setIsRunning(true);
-          }
-        } else {
-          setTimeLeft(state.timeLeft !== undefined ? state.timeLeft : 25 * 60);
-          setIsRunning(false);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load active pomodoro state:', e);
-    }
   }, []);
-
-  // Save active state to localStorage whenever it changes
-  useEffect(() => {
-    if (timeLeft === undefined || isRunning === undefined) return;
-    
-    try {
-      const state = {
-        timeLeft,
-        isRunning,
-        isBreak,
-        focusMinutes,
-        breakMinutes,
-        targetEndTime: isRunning ? (Date.now() + timeLeft * 1000) : null,
-        currentKeystrokes: keystrokesRef.current,
-        currentClicks: clicksRef.current,
-        activeSeconds: activeSecondsRef.current,
-        elapsedSeconds: elapsedSecondsRef.current
-      };
-      localStorage.setItem('ameva-pomodoro-active-state', JSON.stringify(state));
-    } catch (e) {
-      console.error('Failed to save active pomodoro state:', e);
-    }
-  }, [timeLeft, isRunning, isBreak, focusMinutes, breakMinutes]);
 
   // Save stats to localStorage
   const saveStats = (newSessions: number, newTime: number, newKeys: number, newClicks: number) => {

@@ -95,13 +95,9 @@ const customDescriptions = {
   
   'google-maps': "<span class='desc-asis'>[As-Is] 주소를 복사해서 지도 탭에 붙여넣고 다시 캡처하는 번거로운 워크플로우</span><br/><span class='desc-tobe'>[To-Be] <b>엔터프라이즈 3D 맵스!</b> 길찾기, 로케이션 핀 관리, 위성 뷰를 문서 작업과 동시에 수행하세요.</span><br/><span class='desc-highlight'>✨ 강점: 커스텀 마커 저장 및 3D 렌더링 최적화</span>",
   
-  'google': "<span class='desc-asis'>[As-Is] 궁금한 게 생길 때마다 새 탭을 열어 검색하고 다시 돌아오는 시선 분산</span><br/><span class='desc-tobe'>[To-Be] <b>인라인 검색 엔진!</b> 팝업 없이 워크스페이스 안에서 바로 검색하고 결과를 드래그해 즉시 인용하세요.</span><br/><span class='desc-highlight'>✨ 강점: 인라인 브라우징으로 컨텍스트 유지 극대화</span>",
-  
   'mind-map': "<span class='desc-asis'>[As-Is] 아이디어가 떠올라도 마인드맵 앱이 켜지는 시간을 기다리다 흐름이 끊김</span><br/><span class='desc-tobe'>[To-Be] <b>즉각적인 브레인스토밍!</b> 무제한 노드를 지원하는 마인드맵 툴을 단 0.1초 만에 로드하여 아이디어를 확장하세요.</span><br/><span class='desc-highlight'>✨ 강점: 자동 레이아웃 정렬 및 이미지 내보내기</span>",
   
   'minimap': "<span class='desc-asis'>[As-Is] 수천 줄의 코드나 문서를 스크롤하며 내가 어디쯤 있는지 길을 잃음</span><br/><span class='desc-tobe'>[To-Be] <b>코드 컨텍스트 네비게이션!</b> 문서의 전체 구조를 한눈에 파악하고 원하는 위치로 즉시 점프합니다.</span><br/><span class='desc-highlight'>✨ 강점: 시맨틱 하이라이팅 및 드래그 스크롤링</span>",
-  
-  'naver': "<span class='desc-asis'>[As-Is] 국내 포털 검색을 위해 작업창을 가리고 새 브라우저 창을 띄워야 하는 답답함</span><br/><span class='desc-tobe'>[To-Be] <b>한국어 맞춤 포털 인라인 브라우저!</b> 네이버 검색과 주요 서비스를 사이드패널에서 방해 없이 이용하세요.</span><br/><span class='desc-highlight'>✨ 강점: 독립 세션 격리로 안전한 웹 서핑</span>",
   
   'outline': "<span class='desc-asis'>[As-Is] 방대한 분량의 문서에서 특정 목차나 단락을 찾기 위해 수동으로 스크롤</span><br/><span class='desc-tobe'>[To-Be] <b>자동 목차 생성기!</b> 헤딩 태그를 분석해 계층형 아웃라인을 생성하고 트리 형태로 문서를 완벽히 지배합니다.</span><br/><span class='desc-highlight'>✨ 강점: 실시간 DOM 분석 및 즉각적인 앵커 이동</span>",
   
@@ -124,7 +120,7 @@ const customDescriptions = {
   'youtube': "<span class='desc-asis'>[As-Is] 유튜브 탭을 켜두면 알고리즘의 유혹에 빠져 몇 시간씩 허비하게 됨</span><br/><span class='desc-tobe'>[To-Be] <b>미니멀 백그라운드 플레이어!</b> 작업용 플레이리스트나 강의 영상만 깔끔하게 띄워놓고 방해꾼 없는 환경을 만드세요.</span><br/><span class='desc-highlight'>✨ 강점: 광고 차단 모드 및 PIP(Picture in Picture) 완벽 지원</span>",
   
   // Premium Plugins
-  'AmevaBrowserView': "<span class='desc-asis'>[As-Is] 일반 내장 브라우저로는 보안 인증이나 복잡한 렌더링을 감당하기 버거움</span><br/><span class='desc-tobe'>[To-Be] <b>[Premium] 하드웨어 가속 브라우저!</b> 크로미움 기반 엔진을 클라우드에서 스트리밍하여 무거운 3D 웹이나 WebGL도 부드럽게 구동합니다.</span><br/><span class='desc-highlight'>💎 프리미엄 특화: 완벽한 쿠키/세션 격리 및 GPU 가속 렌더링</span>",
+  'SmartSearchScrap': "<span class='desc-asis'>[As-Is] 일반 브라우저와 검색기를 별도로 띄워 복사 붙여넣기를 반복하는 불편함</span><br/><span class='desc-tobe'>[To-Be] <b>[Premium] 스마트 검색 및 스크랩 (Smart Search & Scrap)!</b> 흔적이 남지 않는 스텔스 구글 엔진 기반 익명 검색과 동시에 원하는 영역만 마크다운으로 발췌합니다.</span><br/><span class='desc-highlight'>💎 프리미엄 특화: 흔적 제로 보안 서칭, Ctrl+F 본문 단어 찾기, 단락별 선택적 스크랩 기능</span>",
   
   'DatabaseExplorerPlugin': "<span class='desc-asis'>[As-Is] 수백만 건의 데이터를 쿼리하면 브라우저가 멈추거나 메모리가 폭발함</span><br/><span class='desc-tobe'>[To-Be] <b>[Premium] 빅데이터 최적화 DB 탐색기!</b> 대용량 결과셋을 페이지네이션과 가상 스크롤링으로 지연 없이 부드럽게 렌더링합니다.</span><br/><span class='desc-highlight'>💎 프리미엄 특화: 쿼리 실행 계획(Explain) 시각화 및 SSH 터널링</span>",
   

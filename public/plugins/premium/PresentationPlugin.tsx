@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MonitorPlay, Play, ChevronLeft, ChevronRight, Maximize2, RotateCw } from 'lucide-react';
 
 interface SlideElement {
-  type: 'paragraph' | 'bullet' | 'image' | 'code' | 'map' | 'youtube' | 'link' | 'table';
+  type: 'paragraph' | 'bullet' | 'image' | 'code' | 'map' | 'youtube' | 'link' | 'table' | 'kanban';
   text?: string;
   url?: string;
   code?: string;
@@ -15,6 +15,7 @@ interface SlideElement {
   description?: string;
   thumbnail?: string;
   tableRows?: any[];
+  tasks?: any[];
 }
 
 interface Slide {
@@ -24,10 +25,184 @@ interface Slide {
   score: number;
 }
 
+function CodeRunner({ code }: { code: string }) {
+  const [output, setOutput] = useState<string>('');
+  const [isRunning, setIsRunning] = useState(false);
+
+  const runCode = () => {
+    setIsRunning(true);
+    setOutput('실행 중...');
+    
+    setTimeout(() => {
+      const logs: string[] = [];
+      const originalLog = console.log;
+      console.log = (...args) => {
+        logs.push(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' '));
+      };
+      
+      try {
+        const result = eval(code);
+        if (result !== undefined) {
+          logs.push(`=> ${typeof result === 'object' ? JSON.stringify(result) : String(result)}`);
+        }
+        setOutput(logs.join('\n') || 'Success (출력 결과 없음)');
+      } catch (err: any) {
+        setOutput(`⚠️ Error: ${err.message}`);
+      } finally {
+        console.log = originalLog;
+        setIsRunning(false);
+      }
+    }, 50);
+  };
+
+  return (
+    <div style={{ marginTop: '8px', width: '100%' }}>
+      <button 
+        onClick={runCode}
+        disabled={isRunning}
+        style={{ 
+          background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', 
+          color: '#fff', fontSize: '9.5px', fontWeight: 'bold', padding: '4px 10px', 
+          borderRadius: '4px', cursor: 'pointer', transition: 'all 0.1s' 
+        }}
+      >
+        {isRunning ? 'Running...' : '▶ 코드 실행'}
+      </button>
+      {output && (
+        <pre style={{ 
+          marginTop: '6px', padding: '8px', background: '#090a0f', border: '1px solid #1f2029', 
+          borderRadius: '4px', color: '#34d399', fontSize: '9px', fontFamily: 'monospace', 
+          maxHeight: '100px', overflowY: 'auto', margin: 0, whiteSpace: 'pre-wrap', textAlign: 'left'
+        }}>
+          {output}
+        </pre>
+      )}
+    </div>
+  );
+}
+
+function MiniSlideKanban({ initialTasks }: { initialTasks: any[] }) {
+  const [tasks, setTasks] = useState<any[]>(initialTasks);
+
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetChecked: boolean) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    if (!taskId) return;
+
+    const amevaCore = (window as any).AMEVA_CORE;
+    if (amevaCore && amevaCore.editor) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        amevaCore.editor.updateBlock(taskId, {
+          props: { ...task.props, checked: targetChecked }
+        });
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, props: { ...t.props, checked: targetChecked } } : t));
+      }
+    }
+  };
+
+  const todoList = tasks.filter(t => !t.props?.checked);
+  const doneList = tasks.filter(t => t.props?.checked);
+
+  const getTaskText = (t: any): string => {
+    if (!t) return '';
+    if (typeof t.content === 'string') return t.content;
+    if (Array.isArray(t.content)) {
+      return t.content.map((c: any) => c?.text || '').join('');
+    }
+    return '';
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: '12px', width: '100%', minHeight: '160px', marginTop: '10px', textAlign: 'left' }}>
+      <div 
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, false)}
+        style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#ef4444' }}>To Do</span>
+          <span style={{ fontSize: '9px', background: '#3f3f46', padding: '1px 5px', borderRadius: '8px', color: '#fff' }}>{todoList.length}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }}>
+          {todoList.map(t => (
+            <div 
+              key={t.id} 
+              draggable 
+              onDragStart={(e) => handleDragStart(e, t.id)}
+              style={{ background: '#1c1d24', border: '1px solid #2e303e', padding: '6px 8px', borderRadius: '4px', fontSize: '9.5px', color: '#d1d5db', cursor: 'grab' }}
+            >
+              {getTaskText(t)}
+            </div>
+          ))}
+          {todoList.length === 0 && <div style={{ fontSize: '9px', color: '#6b7280', textAlign: 'center', paddingTop: '10px' }}>할 일 없음</div>}
+        </div>
+      </div>
+
+      <div 
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, true)}
+        style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#10b981' }}>Done</span>
+          <span style={{ fontSize: '9px', background: '#3f3f46', padding: '1px 5px', borderRadius: '8px', color: '#fff' }}>{doneList.length}</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }}>
+          {doneList.map(t => (
+            <div 
+              key={t.id} 
+              draggable 
+              onDragStart={(e) => handleDragStart(e, t.id)}
+              style={{ background: '#1c1d24', border: '1px solid #2e303e', padding: '6px 8px', borderRadius: '4px', fontSize: '9.5px', color: '#9ca3af', textDecoration: 'line-through', cursor: 'grab' }}
+            >
+              {getTaskText(t)}
+            </div>
+          ))}
+          {doneList.length === 0 && <div style={{ fontSize: '9px', color: '#6b7280', textAlign: 'center', paddingTop: '10px' }}>완료된 일 없음</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PresentationPlugin() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [slideIdx, setSlideIdx] = useState(0);
   const [slides, setSlides] = useState<Slide[]>([]);
+  const presentationContainerRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const handleToggleFullscreen = () => {
+    if (!presentationContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      presentationContainerRef.current.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(err => {
+        console.error('Error entering fullscreen:', err);
+        setIsFullscreen(true);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      const isDomFs = !!document.fullscreenElement;
+      setIsFullscreen(isDomFs);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
 
   // Extract text from block content safely
   const getBlockText = (block: any): string => {
@@ -128,6 +303,22 @@ export function PresentationPlugin() {
       }
     };
 
+    let consecutiveChecklist: any[] = [];
+
+    const pushConsecutiveChecklist = () => {
+      if (consecutiveChecklist.length > 0) {
+        if (currentScore + 60 > MAX_BUDGET) {
+          pushCurrentSlide('계속');
+        }
+        currentElements.push({
+          type: 'kanban',
+          tasks: [...consecutiveChecklist]
+        });
+        currentScore += 60;
+        consecutiveChecklist = [];
+      }
+    };
+
     blocks.forEach((block: any) => {
       if (block.id === skipH1Id) return; // 표지 전용 H1은 본문 파트에서 생략
 
@@ -135,12 +326,20 @@ export function PresentationPlugin() {
       let blockScore = 15;
       let element: SlideElement | null = null;
 
+      if (block.type === 'checkListItem') {
+        consecutiveChecklist.push(block);
+        return;
+      } else {
+        pushConsecutiveChecklist();
+      }
+
       // ㄴ. #, ##, ### 단락 분할 기준
       if (block.type === 'heading') {
         const lvl = block.props?.level || 2;
         blockScore = lvl === 1 ? 40 : lvl === 2 ? 30 : 25;
 
         // 새 헤더 등장 시 기존 슬라이드 방출 후 섹션 타이틀 설정
+        pushConsecutiveChecklist();
         pushCurrentSlide();
         currentSection = text || '제목 없는 섹션';
         currentScore = blockScore;
@@ -175,7 +374,6 @@ export function PresentationPlugin() {
         element = {
           type: 'youtube',
           url: block.props?.url || '',
-          // Extract videoId from YouTube URLs
           title: block.props?.videoId || block.props?.url?.split('v=')?.[1]?.split('&')?.[0] || ''
         };
       } else if (block.type === 'linkPreview') {
@@ -204,6 +402,7 @@ export function PresentationPlugin() {
     });
 
     // 마지막 남은 누적 요소 방출
+    pushConsecutiveChecklist();
     pushCurrentSlide();
 
     return parsedSlides;
@@ -258,8 +457,8 @@ export function PresentationPlugin() {
   const renderSlideContent = (slide: Slide) => {
     if (!slide) return null;
 
-    // Check if the slide has any complex visual media block (image, map, code, video)
-    const mediaEl = slide.elements.find(el => ['image', 'map', 'code', 'youtube', 'table'].includes(el.type));
+    // Check if the slide has any complex visual media block (image, map, code, video, kanban)
+    const mediaEl = slide.elements.find(el => ['image', 'map', 'code', 'youtube', 'table', 'kanban'].includes(el.type));
     const textEls = slide.elements.filter(el => ['paragraph', 'bullet', 'link'].includes(el.type));
 
     // If both text and complex media exist, render a premium 2-column split screen!
@@ -426,6 +625,16 @@ export function PresentationPlugin() {
             </table>
           </div>
         );
+      case 'kanban':
+        return (
+          <div style={{ width: '100%', background: '#13141f', border: '1px solid #2e303e', borderRadius: '8px', padding: '10px', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a78bfa' }}></span>
+              <span style={{ fontSize: '9.5px', color: '#9ca3af', fontWeight: 'bold' }}>문서 연동 칸반 보드 (드래그 조작 가능)</span>
+            </div>
+            <MiniSlideKanban initialTasks={el.tasks} />
+          </div>
+        );
       default:
         return null;
     }
@@ -468,7 +677,10 @@ export function PresentationPlugin() {
       <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
 
         {/* Presentation canvas container */}
-        <div style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div 
+          ref={presentationContainerRef}
+          style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        >
           {!isPlaying ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center' }}>
               <MonitorPlay size={44} color="#374151" style={{ marginBottom: '12px' }} />
@@ -500,7 +712,27 @@ export function PresentationPlugin() {
               {/* Slide controls top header */}
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: '8px', zIndex: 10 }}>
                 <button
-                  onClick={() => setIsPlaying(false)}
+                  onClick={handleToggleFullscreen}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isFullscreen ? '창 모드' : '전체보기'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsPlaying(false);
+                    if (document.fullscreenElement) {
+                      document.exitFullscreen();
+                    }
+                  }}
                   style={{
                     background: 'rgba(255,255,255,0.08)',
                     border: '1px solid rgba(255,255,255,0.1)',

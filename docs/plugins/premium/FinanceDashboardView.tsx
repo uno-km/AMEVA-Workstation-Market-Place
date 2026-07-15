@@ -19,7 +19,143 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TrendingUp, TrendingDown, RefreshCw, Search, X, ChevronDown, ChevronUp, FileText, Eye } from 'lucide-react';
-import { STOCK_MOCK_NEWS, DEFAULT_MOCK_NEWS } from './constants';
+const STOCK_MOCK_NEWS: Record<string, Array<{
+  id: string;
+  title: string;
+  source: string;
+  time: string;
+  summary: string;
+}>> = {
+  '^GSPC': [
+    {
+      id: 'gspc-1',
+      title: 'S&P 500, 연준 금리 인하 기대감에 사상 최고가 랠리 지속',
+      source: '블룸버그 파이낸셜',
+      time: '10분 전',
+      summary: '제롬 파월 연준 의장의 완화적 발언으로 금리 인하 사이클 도래 확신이 선 미국 증시가 테크 중심의 매수세에 힘입어 사상 최고치 경신 행진을 달리고 있습니다.'
+    },
+    {
+      id: 'gspc-2',
+      title: '인플레이션 지표 둔화 속 월가 기관들 "추가 상승 여력 충분"',
+      source: '로이터 통신',
+      time: '1시간 전',
+      summary: '근원 소비자물가지수(CPI)가 예상을 하회하면서 거시 경제 불확실성이 해소되는 양상입니다. 골드만삭스를 비롯한 주요 IB는 S&P 500의 연말 목표치를 상향 조정했습니다.'
+    }
+  ],
+  '^IXIC': [
+    {
+      id: 'ixic-1',
+      title: '나스닥, 빅테크 강세 업고 20,000포인트 돌파 가시화',
+      source: 'WSJ 테크',
+      time: '5분 전',
+      summary: '엔비디아, 애플, 마이크로소프트의 삼각 편대가 전반적인 인공지능(AI) 반도체 붐을 견인하고 있습니다. 나스닥 100 지수는 전일 대비 1.8% 상승 마감했습니다.'
+    },
+    {
+      id: 'ixic-2',
+      title: '중소형 기술주로도 AI 온기 확산... 중저가 반도체 장비 수요 급증',
+      source: '마켓워치',
+      time: '2시간 전',
+      summary: '초대형 AI 가속기 위주의 상승장이 레거시 반도체 공급망 부품 사들로 넓어지며 나스닥 내 중소형 테크 스타트업들의 기업 가치가 동반 우상향하고 있습니다.'
+    }
+  ],
+  '^KS11': [
+    {
+      id: 'ks11-1',
+      title: '코스피, 외국인·기관 쌍끌이 매수에 2,800선 안착 시도',
+      source: '연합인포맥스',
+      time: '15분 전',
+      summary: '반도체 대장주의 2분기 깜짝 실적(어닝서프라이즈) 예고에 힘입어 코스피가 외인들의 강력한 현물 순매수세를 바탕으로 견고한 흐름을 지속하고 있습니다.'
+    },
+    {
+      id: 'ks11-2',
+      title: '정부 "밸류업 가이드라인 강화 계획"... 주주 환원 우수 기업 세제 혜택',
+      source: '한국경제',
+      time: '3시간 전',
+      summary: '금융당국이 코리아 디스카운트 해소를 위해 연말까지 배당 소득 분리과세 법안을 추진하겠다고 발표하면서, 저PBR 금융 및 지주사 위주로 강한 수급 유입이 발생했습니다.'
+    }
+  ],
+  'AAPL': [
+    {
+      id: 'aapl-1',
+      title: '애플, 자체 온디바이스 AI "Apple Intelligence" 출시 후 기기 교체 수요 급증',
+      source: '테크크런치',
+      time: '2분 전',
+      summary: '아이폰 16 시리즈에 기본 탑재되는 신형 신경망 코어와 개인 맞춤형 AI 비서 기능이 얼리어답터를 넘어 대중 시장의 스마트폰 신규 교체 사이클을 강하게 자극하고 있습니다.'
+    },
+    {
+      id: 'aapl-2',
+      title: '애플 비전 프로 2세대 양산 돌입... 경량화 및 가격 접근성 향상',
+      source: '9to5Mac',
+      time: '45분 전',
+      summary: '공급망 정보에 따르면 1세대 모델의 단점이었던 착용 무게를 15% 줄이고, 디스플레이 해상도를 강화한 보급형 공간 컴퓨터 헤드셋이 내년 상반기 조기 공개 예정입니다.'
+    }
+  ],
+  'NVDA': [
+    {
+      id: 'nvda-1',
+      title: '엔비디아, 차세대 블랙웰(Blackwell) 가속기 연말 출하량 전량 완판',
+      source: 'DigiTimes',
+      time: '1분 전',
+      summary: 'TSMC의 CoWoS 어드밴스드 패키징 라인을 독점하다시피 한 엔비디아가 세계 하이퍼스케일 클라우드사(MS, 구글, 메타)들의 사전 예약 폭주로 향후 3개 분기 물량을 선점했습니다.'
+    },
+    {
+      id: 'nvda-2',
+      title: '자율주행용 칩 세트 "DRIVE Thor" 중국 자율차 신흥 거점 탑재 속도',
+      source: '오토카 뉴스',
+      time: '1시간 전',
+      summary: '미국의 대중국 반도체 규제 우회 규격을 만족하면서도 차량 내 연산 처리 능력을 극대화한 신형 로보택시용 컴퓨터 모듈이 주요 전기차 브랜드 모델에 표준 탑재 계약을 맺었습니다.'
+    }
+  ],
+  'TSLA': [
+    {
+      id: 'tsla-1',
+      title: '테슬라 FSD V12, 규제당국 승인 임박에 자율주행 택시 사업 가시화',
+      source: '일렉트렉',
+      time: '8분 전',
+      summary: '완전 엔드-투-엔드 신경망으로 교체된 Full Self-Driving 소프트웨어가 마일당 개입 횟수를 획기적으로 낮추면서 조만간 샌프란시스코 내 로보택시 면허 발급 가능성이 커졌습니다.'
+    },
+    {
+      id: 'tsla-2',
+      title: '기가팩토리 상하이, 3분기 생산 공정 최적화 완료... 모델 Y 주행거리 업그레이드',
+      source: '시나파이낸스',
+      time: '1.5시간 전',
+      summary: '리튬인산철(LFP) 블레이드 배터리 장착 비율을 늘리고 기가캐스팅 설비를 고도화하여 조립 원가를 8% 추가 절감했습니다. 업그레이드된 차량은 주행 가능거리가 5% 상승합니다.'
+    }
+  ],
+  'MSFT': [
+    {
+      id: 'msft-1',
+      title: '마이크로소프트, GitHub Copilot 유료 구독자 200만 명 돌파',
+      source: '인포월드',
+      time: '12분 전',
+      summary: '개발 환경의 차세대 AI 어시스턴트 유료 도입 증가세가 연 40% 이상의 가파른 성장을 견인하며, 클라우드 부문 마진을 기존 예측치보다 2.5%p 상향 개선시켰습니다.'
+    },
+    {
+      id: 'msft-2',
+      title: 'Azure AI, OpenAI 최신 모델 GPT-4o 멀티모달 서비스 전면 상용화',
+      source: 'ZDNet',
+      time: '2시간 전',
+      summary: '음성, 비디오 실시간 인터랙션이 내장된 신규 API 엔드포인트를 글로벌 리전에 우선 배포하며 금융권 및 고객센터 자동화 솔루션 계약 수주를 대거 확보했습니다.'
+    }
+  ]
+};
+
+const DEFAULT_MOCK_NEWS = [
+  {
+    id: 'default-1',
+    title: '글로벌 자금 흐름, 채권 시장에서 고위험 테크 주식으로 대거 이동',
+    source: '파이낸셜 타임스',
+    time: '20분 전',
+    summary: '기준금리 인하 기조가 본격화됨에 따라 MMF에 묶여있던 대기성 자금이 글로벌 우량 성장주와 고배당 ETF로 유입되기 시작했습니다.'
+  },
+  {
+    id: 'default-2',
+    title: '원자재 시장 요동... 공급망 긴장 및 에너지 수요 반등에 원유 상승',
+    source: 'CNBC',
+    time: '2시간 전',
+    summary: '지정학적 리스크 확산에 따른 글로벌 해상 운송 병목 현상과 제조업 가동률 회복세가 맞물려 서부 텍사스산 원유(WTI) 가격이 배럴당 80달러선 재진입을 모색하고 있습니다.'
+  }
+];
 
 interface StockQuote {
   symbol: string;
@@ -179,6 +315,33 @@ const fmtVol = (n?: number) => !n ? '-' : n >= 1e9 ? (n/1e9).toFixed(1) + 'B' : 
        */
 const fmtCap = (n?: number) => !n ? '-' : n >= 1e12 ? '$' + (n/1e12).toFixed(2) + 'T' : n >= 1e9 ? '$' + (n/1e9).toFixed(1) + 'B' : '$' + (n/1e6).toFixed(0) + 'M';
 
+const getDisplayName = (q: StockQuote) => {
+  if (INDEX_LABELS[q.symbol]) return INDEX_LABELS[q.symbol];
+  if (FX_LABELS[q.symbol]) return FX_LABELS[q.symbol];
+  if (q.symbol === '^TNX') return '미 10Y 국채 수익률';
+  return q.shortName || q.symbol;
+};
+
+function Sparkline({ isUp }: { isUp: boolean }) {
+  const points = isUp 
+    ? '0,20 10,18 20,22 30,12 40,15 50,8 60,14 70,5 80,10 90,2'
+    : '0,5 10,8 20,6 30,15 40,12 50,18 60,16 70,22 80,20 90,24';
+  const color = isUp ? '#34d399' : '#ef4444';
+  return (
+    <svg width="90" height="26" viewBox="0 0 90 26" style={{ overflow: 'visible' }}>
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+        style={{ filter: `drop-shadow(0px 1px 3px ${color}55)` }}
+      />
+    </svg>
+  );
+}
+
   /*
    * [FUNCTION CONTRACT]
    * - 함수 명: `SectionTitle`
@@ -200,9 +363,10 @@ function SectionTitle({ label, icon }: { label: string; icon: string }) {
    * - 역할: 인자 정보를 검수하고 비즈니스 계약 조건에 맞춰 최종 바인딩 결과물/바이너리 버퍼를 반환함.
    * - 예시: `QuoteRow(...)` 호출 시 런타임 비동기/동기 연쇄 반응 유도.
    */
-function QuoteRow({ symbol, label, price, pct, currency = '', isUp, onClick, isActive, onContextMenu }: {
+function QuoteRow({ symbol, label, price, pct, currency = '', isUp, onClick, isActive, onContextMenu, draggable, onDragStart, hideSymbolLine }: {
   symbol: string; label: string; price: number; pct: number
   currency?: string; isUp: boolean; onClick?: () => void; isActive?: boolean; onContextMenu?: (e: React.MouseEvent) => void
+  draggable?: boolean; onDragStart?: (e: React.DragEvent) => void; hideSymbolLine?: boolean
 }) {
       /*
        * [RUN-TIME STATE / INVARIANT]
@@ -222,17 +386,21 @@ function QuoteRow({ symbol, label, price, pct, currency = '', isUp, onClick, isA
     ? (isUp ? 'rgba(52,211,153,0.4)' : 'rgba(239,68,68,0.4)')
     : (isUp ? 'rgba(52,211,153,0.08)' : 'rgba(239,68,68,0.08)');
 
+  const cleanSymbol = symbol.replace(/^\^/, '');
+
   return (
     <div
       onClick={onClick}
       onContextMenu={onContextMenu}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '7px', background: bg, border: '1px solid ' + border, cursor: (onClick || onContextMenu) ? 'pointer' : 'default', transition: 'background 0.12s', marginBottom: '3px' }}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '7px', background: bg, border: '1px solid ' + border, cursor: (onClick || onContextMenu || draggable) ? 'grab' : 'default', transition: 'background 0.12s', marginBottom: '3px' }}
       onMouseEnter={e => onClick && (e.currentTarget.style.background = isUp ? 'rgba(52,211,153,0.09)' : 'rgba(239,68,68,0.09)')}
       onMouseLeave={e => onClick && (e.currentTarget.style.background = bg)}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', minWidth: 0 }}>
         <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>{label}</span>
-        {label !== symbol && <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>{symbol}</span>}
+        {!hideSymbolLine && label !== cleanSymbol && <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>{cleanSymbol}</span>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', flexShrink: 0, marginLeft: '6px' }}>
         <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
@@ -264,6 +432,8 @@ function DetailPanel({ q, onClose }: { q: StockQuote; onClose: () => void }) {
        */
   const isUp = q.regularMarketChangePercent >= 0;
 
+  const cleanSymbol = q.symbol.replace(/^\^/, '');
+
       /*
        * [RUN-TIME STATE / INVARIANT]
        * - 변수 명: `newsList`
@@ -280,7 +450,7 @@ function DetailPanel({ q, onClose }: { q: StockQuote; onClose: () => void }) {
   const handleInsert = () => {
     const now = new Date().toLocaleString('ko-KR');
     const md = [
-      '### 📊 ' + (q.shortName || q.symbol) + ' (' + q.symbol + ') 시세 스냅샷',
+      '### 📊 ' + getDisplayName(q) + ' 시세 스냅샷',
       '> 기준: ' + now,
       '',
       '| 항목 | 값 |',
@@ -345,7 +515,7 @@ function DetailPanel({ q, onClose }: { q: StockQuote; onClose: () => void }) {
         }
       `}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>{(q.shortName || q.symbol) + ' 상세 정보'}</span>
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>{getDisplayName(q) + ' 상세 정보'}</span>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, display: 'flex' }}>
           <X size={13} />
         </button>
@@ -426,10 +596,84 @@ export function FinanceDashboardView() {
   const [stockQ, setStockQ] = useState<StockQuote[]>([]);
   const [symbols, setSymbols] = useState<string[]>(DEFAULT_STOCK_SYMBOLS);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState('');
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+  const [searchDetailStock, setSearchDetailStock] = useState<StockQuote | null>(null);
+
+  // 실시간 한글/영어 종목 검색 디바운스 이펙트
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const delayDebounce = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const queryUrl = `https://uno-km.github.io/AMEVA-Workstation-Market-Place/api/finance/search.json`;
+        const res = await fetch(queryUrl);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.quotes)) {
+            setSearchResults(json.quotes);
+          }
+        }
+      } catch (err) {
+        console.error('Search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery]);
+
+  const handleSelectSearched = async (symbolToAdd: string) => {
+    setSearchQuery('');
+    setSearchResults([]);
+    try {
+      const quotes = await fetchQuotesBatch([symbolToAdd]);
+      if (quotes.length > 0) {
+        setSearchDetailStock(quotes[0]);
+      }
+    } catch (err) {
+      console.error('Search detail fetch error:', err);
+    }
+  };
+
+  const handleAddWatchlist = (symbol: string) => {
+    const sym = symbol.toUpperCase().trim();
+    if (sym && !symbols.includes(sym)) {
+      setSymbols(p => [...p, sym]);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, q: StockQuote) => {
+    const isUp = q.regularMarketChangePercent >= 0;
+    const now = new Date().toLocaleString('ko-KR');
+    const displayName = getDisplayName(q);
+
+    const md = [
+      `### 📊 ${displayName} 시세 스냅샷`,
+      `> 📅 **기준 시점:** ${now}`,
+      '',
+      '| 금융 지표 | 실시간 시세 정보 |',
+      '| :--- | :--- |',
+      `| **현재가 (Price)** | **${fmt(q.regularMarketPrice)} ${q.currency || ''}** |`,
+      `| **등락 (Change)** | ${isUp ? '🟢' : '🔴'} **${isUp ? '▲' : '▼'} ${fmt(Math.abs(q.regularMarketChange || 0))} (${isUp ? '+' : ''}${fmt(q.regularMarketChangePercent || 0)}%)** |`,
+      q.regularMarketOpen ? `| **시가 (Open)** | ${fmt(q.regularMarketOpen)} |` : null,
+      (q.regularMarketDayHigh || q.regularMarketDayLow) ? `| **하루 변동 (Day Range)** | ${fmt(q.regularMarketDayLow)} ~ ${fmt(q.regularMarketDayHigh)} |` : null,
+      (q.fiftyTwoWeekLow || q.fiftyTwoWeekHigh) ? `| **52주 변동 (52W Range)** | ${fmt(q.fiftyTwoWeekLow)} ~ ${fmt(q.fiftyTwoWeekHigh)} |` : null,
+      q.regularMarketVolume ? `| **거래량 (Volume)** | ${fmtVol(q.regularMarketVolume)} |` : null,
+      q.marketCap ? `| **시가총액 (Market Cap)** | ${fmtCap(q.marketCap)} |` : null,
+      q.trailingPE ? `| **PER** | ${fmt(q.trailingPE)} |` : null,
+    ].filter(Boolean).join('\n');
+
+    e.dataTransfer.setData('text/plain', md);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
 
   /*
    * [RUN-TIME STATE / INVARIANT]
@@ -460,43 +704,50 @@ export function FinanceDashboardView() {
   const handleInsertDirect = (q: StockQuote) => {
     const isUp = q.regularMarketChangePercent >= 0;
     const now = new Date().toLocaleString('ko-KR');
+    const displayName = getDisplayName(q);
+
     const md = [
-      '### 📊 ' + (q.shortName || q.symbol) + ' (' + q.symbol + ') 시세 스냅샷',
-      '> 기준: ' + now,
+      `### 📊 ${displayName} 시세 스냅샷`,
+      `> 📅 **기준 시점:** ${now}`,
       '',
-      '| 항목 | 값 |',
-      '|------|------|',
-      '| 현재가 | **' + fmt(q.regularMarketPrice) + ' ' + q.currency + '** |',
-      '| 등락 | ' + (isUp ? '▲' : '▼') + ' ' + fmt(Math.abs(q.regularMarketChange || 0)) + ' (' + (isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0) + '%) |',
-      '| 시가 | ' + fmt(q.regularMarketOpen) + ' |',
-      '| 고가 | ' + fmt(q.regularMarketDayHigh) + ' |',
-      '| 저가 | ' + fmt(q.regularMarketDayLow) + ' |',
-      '| 거래량 | ' + fmtVol(q.regularMarketVolume) + ' |',
-      '| 시가총액 | ' + fmtCap(q.marketCap) + ' |',
-      q.trailingPE ? '| PER | ' + fmt(q.trailingPE) + ' |' : null,
-      '| 52주 범위 | ' + fmt(q.fiftyTwoWeekLow) + ' ~ ' + fmt(q.fiftyTwoWeekHigh) + ' |',
+      '| 금융 지표 | 실시간 시세 정보 |',
+      '| :--- | :--- |',
+      `| **현재가 (Price)** | **${fmt(q.regularMarketPrice)} ${q.currency || ''}** |`,
+      `| **등락 (Change)** | ${isUp ? '🟢' : '🔴'} **${isUp ? '▲' : '▼'} ${fmt(Math.abs(q.regularMarketChange || 0))} (${isUp ? '+' : ''}${fmt(q.regularMarketChangePercent || 0)}%)** |`,
+      q.regularMarketOpen ? `| **시가 (Open)** | ${fmt(q.regularMarketOpen)} |` : null,
+      (q.regularMarketDayHigh || q.regularMarketDayLow) ? `| **하루 변동 (Day Range)** | ${fmt(q.regularMarketDayLow)} ~ ${fmt(q.regularMarketDayHigh)} |` : null,
+      (q.fiftyTwoWeekLow || q.fiftyTwoWeekHigh) ? `| **52주 변동 (52W Range)** | ${fmt(q.fiftyTwoWeekLow)} ~ ${fmt(q.fiftyTwoWeekHigh)} |` : null,
+      q.regularMarketVolume ? `| **거래량 (Volume)** | ${fmtVol(q.regularMarketVolume)} |` : null,
+      q.marketCap ? `| **시가총액 (Market Cap)** | ${fmtCap(q.marketCap)} |` : null,
+      q.trailingPE ? `| **PER** | ${fmt(q.trailingPE)} |` : null,
     ].filter(Boolean).join('\n');
     window.dispatchEvent(new CustomEvent('ameva:insert-text', { detail: md }));
   };
 
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `refresh`
-       * - 자료형 / 예상 값: 우변 식 계산 결과에 따라 런타임 할당되는 적격 데이터 타입 (예: string, number, boolean, Object 등).
-       * - 시나리오: 본 함수 영역 내에서 상태 생명주기를 유지하며 데이터 보존 및 후속 분기 연산에 소비됨.
-       * - 예시 코드: `const refresh = ...` 형태로 안전 캐싱 후 가공 기동.
-       */
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    const sym = searchQuery.toUpperCase().trim();
+    if (!sym) return;
+
+    if (searchResults.length > 0) {
+      handleSelectSearched(searchResults[0].symbol);
+    } else {
+      if (!symbols.includes(sym)) {
+        setSymbols(p => [...p, sym]);
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  };
+
+  const skel = (n: number) => [...Array(n)].map((_, i) => (
+    <div key={i} style={{ height: '32px', borderRadius: '7px', background: 'var(--bg-glass)', marginBottom: '3px', opacity: 0.45 }} />
+  ));
+
   const refresh = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `all`
-       * - 자료형 / 예상 값: 우변 식 계산 결과에 따라 런타임 할당되는 적격 데이터 타입 (예: string, number, boolean, Object 등).
-       * - 시나리오: 본 함수 영역 내에서 상태 생명주기를 유지하며 데이터 보존 및 후속 분기 연산에 소비됨.
-       * - 예시 코드: `const all = ...` 형태로 안전 캐싱 후 가공 기동.
-       */
       const all = await fetchQuotesBatch([...INDEX_SYMBOLS, ...FX_SYMBOLS, '^TNX', ...symbols]);
       setIndexQ(all.filter(q => INDEX_SYMBOLS.includes(q.symbol)));
       setFxQ(all.filter(q => FX_SYMBOLS.includes(q.symbol)));
@@ -513,54 +764,9 @@ export function FinanceDashboardView() {
 
   useEffect(() => {
     refresh();
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `id`
-       * - 자료형 / 예상 값: 우변 식 계산 결과에 따라 런타임 할당되는 적격 데이터 타입 (예: string, number, boolean, Object 등).
-       * - 시나리오: 본 함수 영역 내에서 상태 생명주기를 유지하며 데이터 보존 및 후속 분기 연산에 소비됨.
-       * - 예시 코드: `const id = ...` 형태로 안전 캐싱 후 가공 기동.
-       */
     const id = setInterval(refresh, AUTO_REFRESH_MS);
     return () => clearInterval(id);
   }, [refresh]);
-
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `handleAdd`
-       * - 자료형 / 예상 값: 우변 식 계산 결과에 따라 런타임 할당되는 적격 데이터 타입 (예: string, number, boolean, Object 등).
-       * - 시나리오: 본 함수 영역 내에서 상태 생명주기를 유지하며 데이터 보존 및 후속 분기 연산에 소비됨.
-       * - 예시 코드: `const handleAdd = ...` 형태로 안전 캐싱 후 가공 기동.
-       */
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `sym`
-       * - 자료형 / 예상 값: 우변 식 계산 결과에 따라 런타임 할당되는 적격 데이터 타입 (예: string, number, boolean, Object 등).
-       * - 시나리오: 본 함수 영역 내에서 상태 생명주기를 유지하며 데이터 보존 및 후속 분기 연산에 소비됨.
-       * - 예시 코드: `const sym = ...` 형태로 안전 캐싱 후 가공 기동.
-       */
-    const sym = searchQuery.toUpperCase().trim();
-      /*
-       * [ALGORITHM BRANCH / DECISION]
-       * - 조건 식: `sym && !symbols.includes(sym)) { setSymbols(p => [...p, sym]); setSearchQuery(''`
-       * - 만족 시: 비즈니스 요구사항을 만족하여 대응 내부 분기 블록을 구동함.
-       * - 불만족 시: 바이패스(Bypass)하여 하위 연산으로 폴백하거나 조건 스택을 탈출함.
-       * - 예시: `if (sym && !symbols.includes(sym)) { setSymbols(p => [...p, sym]); setSearchQuery('')` 만족 시 런타임 내포 연산 및 데이터 매핑 즉시 활성화.
-       */
-    if (sym && !symbols.includes(sym)) { setSymbols(p => [...p, sym]); setSearchQuery(''); }
-  };
-
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `skel`
-       * - 자료형 / 예상 값: 우변 식 계산 결과에 따라 런타임 할당되는 적격 데이터 타입 (예: string, number, boolean, Object 등).
-       * - 시나리오: 본 함수 영역 내에서 상태 생명주기를 유지하며 데이터 보존 및 후속 분기 연산에 소비됨.
-       * - 예시 코드: `const skel = ...` 형태로 안전 캐싱 후 가공 기동.
-       */
-  const skel = (n: number) => [...Array(n)].map((_, i) => (
-    <div key={i} style={{ height: '32px', borderRadius: '7px', background: 'var(--bg-glass)', marginBottom: '3px', opacity: 0.45 }} />
-  ));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-main)', overflow: 'hidden' }}>
@@ -580,23 +786,202 @@ export function FinanceDashboardView() {
       <div className="finance-scroll" style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
         {error && <div style={{ padding: '8px 10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', fontSize: '10px', color: '#ef4444', marginBottom: '8px' }}>⚠️ {error}</div>}
  
+        {/* 상단 종목 검색 및 실시간 인스펙터 */}
+        <div style={{ marginBottom: '14px', position: 'relative' }}>
+          <SectionTitle label="종목 검색" icon="🔍" />
+          <form onSubmit={handleAdd} style={{ display: 'flex', gap: '5px', marginBottom: '8px', position: 'relative' }}>
+            <input
+              type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              placeholder="종목명 또는 심볼 검색 (예: 삼성전자, AAPL)"
+              style={{ flex: 1, padding: '6px 9px', borderRadius: '6px', background: 'var(--bg-glass, rgba(255,255,255,0.03))', border: '1px solid var(--border-muted, rgba(255,255,255,0.08))', color: 'var(--text-main)', fontSize: '10.5px', outline: 'none' }}
+            />
+            <button type="submit" style={{ padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: 'var(--primary)', fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+              <Search size={10} /> 검색
+            </button>
+
+            {/* 자동완성 검색 추천 드롭다운 패널 */}
+            {searchResults.length > 0 && (
+              <div 
+                style={{ 
+                  position: 'absolute', 
+                  top: '100%', 
+                  left: 0, 
+                  right: 0, 
+                  background: 'var(--bg-deep, #0b0c10)', 
+                  border: '1px solid var(--border-muted, rgba(255,255,255,0.08))', 
+                  borderRadius: '6px', 
+                  zIndex: 2000, 
+                  maxHeight: '180px', 
+                  overflowY: 'auto', 
+                  marginTop: '4px', 
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(12px)'
+                }}
+              >
+                {searchResults.map(item => (
+                  <div 
+                    key={item.symbol} 
+                    onClick={() => handleSelectSearched(item.symbol)} 
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      padding: '8px 10px', 
+                      cursor: 'pointer', 
+                      borderBottom: '1px solid rgba(255,255,255,0.03)' 
+                    }} 
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} 
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1, textAlign: 'left' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</span>
+                      <span style={{ fontSize: '8px', color: 'var(--text-muted)' }}>{item.symbol.replace(/^\^/, '')} · {item.exchange} ({item.type})</span>
+                    </div>
+                    <span style={{ fontSize: '9px', color: '#34d399', fontWeight: 600, alignSelf: 'center', flexShrink: 0, marginLeft: '8px' }}>선택</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </form>
+
+          {/* 검색한 종목 정보 및 차트, 추가 버튼 카드 */}
+          {searchDetailStock && (() => {
+            const q = searchDetailStock;
+            const isUp = q.regularMarketChangePercent >= 0;
+            const inWatchlist = symbols.includes(q.symbol);
+            const displayName = getDisplayName(q);
+            return (
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  padding: '10px 12px', 
+                  borderRadius: '8px', 
+                  background: 'var(--bg-glass, rgba(15, 15, 20, 0.4))', 
+                  border: '1px solid ' + (isUp ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'),
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  position: 'relative'
+                }}
+              >
+                <button 
+                  onClick={() => setSearchDetailStock(null)} 
+                  style={{ position: 'absolute', top: '6px', right: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'flex' }}
+                >
+                  <X size={10} />
+                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 2, textAlign: 'left' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                    {displayName && displayName !== q.symbol ? `${displayName} (${q.symbol.replace(/^\^/, '')})` : q.symbol.replace(/^\^/, '')}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                      {fmt(q.regularMarketPrice)} <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>{q.currency || ''}</span>
+                    </span>
+                    <span style={{ fontSize: '8.5px', fontWeight: 600, color: isUp ? '#34d399' : '#ef4444', fontFamily: 'var(--font-mono)' }}>
+                      {isUp ? '▲' : '▼'} {fmt(Math.abs(q.regularMarketChange || 0))} ({(isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0)}%)
+                    </span>
+                  </div>
+                </div>
+
+                {/* 미니 스파크라인 차트 */}
+                <div style={{ flex: 1.5, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 8px' }}>
+                  <Sparkline isUp={isUp} />
+                </div>
+
+                <div style={{ flexShrink: 0, marginLeft: '6px' }}>
+                  <button 
+                    onClick={() => handleAddWatchlist(q.symbol)}
+                    disabled={inWatchlist}
+                    style={{ 
+                      padding: '5px 8px', 
+                      borderRadius: '5px', 
+                      cursor: inWatchlist ? 'default' : 'pointer', 
+                      background: inWatchlist ? 'rgba(255,255,255,0.04)' : 'rgba(52,211,153,0.12)', 
+                      border: '1px solid ' + (inWatchlist ? 'rgba(255,255,255,0.08)' : 'rgba(52,211,153,0.3)'), 
+                      color: inWatchlist ? 'var(--text-muted)' : '#34d399', 
+                      fontSize: '9.5px', 
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={e => !inWatchlist && (e.currentTarget.style.background = 'rgba(52,211,153,0.22)')}
+                    onMouseLeave={e => !inWatchlist && (e.currentTarget.style.background = 'rgba(52,211,153,0.12)')}
+                  >
+                    {inWatchlist ? '✓ 추가됨' : '+ 관심종목 추가'}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
         <SectionTitle label="세계 주요 지수" icon="🌐" />
-        {isLoading && indexQ.length === 0 ? skel(6) : indexQ.map(q => (
-          <QuoteRow key={q.symbol} symbol={q.symbol} label={INDEX_LABELS[q.symbol] || q.symbol} price={q.regularMarketPrice} pct={q.regularMarketChangePercent} currency={q.currency} isUp={q.regularMarketChangePercent >= 0} onContextMenu={(e) => handleContextMenu(e, q.symbol, q)} />
-        ))}
+        {isLoading && indexQ.length === 0 ? skel(6) : indexQ.map(q => {
+          const isUp = q.regularMarketChangePercent >= 0;
+          const isExpanded = expandedSymbol === q.symbol;
+          return (
+            <div key={q.symbol}>
+              <QuoteRow
+                symbol={q.symbol} label={INDEX_LABELS[q.symbol] || q.symbol.replace(/^\^/, '')}
+                price={q.regularMarketPrice} pct={q.regularMarketChangePercent}
+                currency={q.currency} isUp={isUp}
+                onClick={() => setExpandedSymbol(p => p === q.symbol ? null : q.symbol)}
+                isActive={isExpanded}
+                onContextMenu={(e) => handleContextMenu(e, q.symbol, q)}
+                draggable={true}
+                onDragStart={(e) => handleDragStart(e, q)}
+              />
+              {isExpanded && <DetailPanel q={q} onClose={() => setExpandedSymbol(null)} />}
+            </div>
+          );
+        })}
  
         <div style={{ marginTop: '12px' }}>
           <SectionTitle label="주요 환율" icon="💱" />
-          {isLoading && fxQ.length === 0 ? skel(4) : fxQ.map(q => (
-            <QuoteRow key={q.symbol} symbol={q.symbol} label={FX_LABELS[q.symbol] || q.symbol} price={q.regularMarketPrice} pct={q.regularMarketChangePercent} isUp={q.regularMarketChangePercent >= 0} onContextMenu={(e) => handleContextMenu(e, q.symbol, q)} />
-          ))}
+          {isLoading && fxQ.length === 0 ? skel(4) : fxQ.map(q => {
+            const isUp = q.regularMarketChangePercent >= 0;
+            const isExpanded = expandedSymbol === q.symbol;
+            return (
+              <div key={q.symbol}>
+                <QuoteRow
+                  symbol={q.symbol} label={FX_LABELS[q.symbol] || q.symbol.replace(/^\^/, '')}
+                  price={q.regularMarketPrice} pct={q.regularMarketChangePercent}
+                  isUp={isUp}
+                  onClick={() => setExpandedSymbol(p => p === q.symbol ? null : q.symbol)}
+                  isActive={isExpanded}
+                  onContextMenu={(e) => handleContextMenu(e, q.symbol, q)}
+                  draggable={true}
+                  onDragStart={(e) => handleDragStart(e, q)}
+                />
+                {isExpanded && <DetailPanel q={q} onClose={() => setExpandedSymbol(null)} />}
+              </div>
+            );
+          })}
         </div>
  
         <div style={{ marginTop: '12px' }}>
           <SectionTitle label="주요 금리" icon="📊" />
-          {bondQ && (
-            <QuoteRow symbol="^TNX" label="미 10Y 국채 수익률" price={bondQ.regularMarketPrice} pct={bondQ.regularMarketChangePercent} currency="%" isUp={bondQ.regularMarketChangePercent >= 0} onContextMenu={(e) => handleContextMenu(e, bondQ.symbol, bondQ)} />
-          )}
+          {bondQ && (() => {
+            const isUp = bondQ.regularMarketChangePercent >= 0;
+            const isExpanded = expandedSymbol === bondQ.symbol;
+            return (
+              <div key={bondQ.symbol}>
+                <QuoteRow
+                  symbol="^TNX" label="미 10Y 국채 수익률"
+                  price={bondQ.regularMarketPrice} pct={bondQ.regularMarketChangePercent}
+                  currency="%" isUp={isUp}
+                  onClick={() => setExpandedSymbol(p => p === bondQ.symbol ? null : bondQ.symbol)}
+                  isActive={isExpanded}
+                  onContextMenu={(e) => handleContextMenu(e, bondQ.symbol, bondQ)}
+                  draggable={true}
+                  onDragStart={(e) => handleDragStart(e, bondQ)}
+                />
+                {isExpanded && <DetailPanel q={bondQ} onClose={() => setExpandedSymbol(null)} />}
+              </div>
+            );
+          })()}
           {INTEREST_RATES.map(r => (
             <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 8px', borderRadius: '7px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '3px' }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -609,42 +994,28 @@ export function FinanceDashboardView() {
         </div>
  
         <div style={{ marginTop: '12px' }}>
-          <SectionTitle label="관심 종목" icon="🔍" />
-          <form onSubmit={handleAdd} style={{ display: 'flex', gap: '5px', marginBottom: '8px' }}>
-            <input
-              type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="심볼 추가 (예: AMZN, 035720.KS)"
-              style={{ flex: 1, padding: '5px 8px', borderRadius: '5px', background: 'var(--bg-glass)', border: '1px solid var(--border-muted)', color: 'var(--text-main)', fontSize: '10.5px', outline: 'none' }}
-            />
-            <button type="submit" style={{ padding: '5px 8px', borderRadius: '5px', cursor: 'pointer', background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <Search size={10} /> 추가
-            </button>
-          </form>
+          <SectionTitle label="관심 종목" icon="⭐" />
  
           {stockQ.map(q => {
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `isUp`
-       * - 자료형 / 예상 값: 등락 여부 boolean.
-       */
             const isUp = q.regularMarketChangePercent >= 0;
-      /*
-       * [RUN-TIME STATE / INVARIANT]
-       * - 변수 명: `isExpanded`
-       * - 자료형 / 예상 값: 아코디언 확장 상태 boolean.
-       */
             const isExpanded = expandedSymbol === q.symbol;
+            const itemLabel = q.shortName && q.shortName !== q.symbol 
+              ? `${q.shortName} (${q.symbol.replace(/^\^/, '')})` 
+              : q.symbol.replace(/^\^/, '');
             return (
               <div key={q.symbol}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                   <div style={{ flex: 1 }}>
                     <QuoteRow
-                      symbol={q.symbol} label={q.shortName || q.symbol}
+                      symbol={q.symbol} label={itemLabel}
                       price={q.regularMarketPrice} pct={q.regularMarketChangePercent}
                       currency={q.currency} isUp={isUp}
                       onClick={() => setExpandedSymbol(p => p === q.symbol ? null : q.symbol)}
                       isActive={isExpanded}
                       onContextMenu={(e) => handleContextMenu(e, q.symbol, q)}
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, q)}
+                      hideSymbolLine={true}
                     />
                   </div>
                   <button onClick={() => setExpandedSymbol(p => p === q.symbol ? null : q.symbol)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'flex' }} title={isExpanded ? '접기' : '상세 보기'}>
