@@ -494,18 +494,18 @@
               <span style="width: 40px; font-size: 9px; color: var(--text-muted, #9ca3af); font-family: monospace; align-self: center;">${timeLabel}</span>
               <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
                 ${slotScheds.map(s => `
-                  <div style="
-                    background: ${s.repeat !== 'none' ? 'rgba(167,139,250,0.12)' : 'rgba(16,185,129,0.12)'};
-                    border: 1px solid ${s.repeat !== 'none' ? 'rgba(167,139,250,0.3)' : 'rgba(16,185,129,0.3)'};
-                    border-left: 3px solid ${s.repeat !== 'none' ? '#a78bfa' : '#10b981'};
-                    border-radius: 4px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center;
-                  ">
-                    <span style="font-size: 10px; font-weight: bold; color: #fff;">${s.title}</span>
-                    <div style="display: flex; items: center; gap: 6px;">
-                      <span style="font-size: 8px; color: var(--text-muted, #9ca3af);">${s.time} ${s.repeat !== 'none' ? '🔁' : ''}</span>
-                      <button class="sched-del" data-date="${dateStr}" data-id="${s.id}" style="background: transparent; border: none; color: #ef4444; font-size: 9px; cursor: pointer; padding: 2px;">✕</button>
+                    <div class="sched-item" data-date="${dateStr}" data-id="${s.id}" style="
+                      background: ${s.repeat !== 'none' ? 'rgba(167,139,250,0.12)' : 'rgba(16,185,129,0.12)'};
+                      border: 1px solid ${s.repeat !== 'none' ? 'rgba(167,139,250,0.3)' : 'rgba(16,185,129,0.3)'};
+                      border-left: 3px solid ${s.repeat !== 'none' ? '#a78bfa' : '#10b981'};
+                      border-radius: 4px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+                    ">
+                      <span style="font-size: 10px; font-weight: bold; color: #fff;">${s.title}</span>
+                      <div style="display: flex; items: center; gap: 6px;">
+                        <span style="font-size: 8px; color: var(--text-muted, #9ca3af);">${s.time} ${s.repeat !== 'none' ? '🔁' : ''}</span>
+                        <button class="sched-del" data-date="${dateStr}" data-id="${s.id}" style="background: transparent; border: none; color: #ef4444; font-size: 9px; cursor: pointer; padding: 2px;">✕</button>
+                      </div>
                     </div>
-                  </div>
                 `).join('')}
               </div>
             </div>
@@ -586,7 +586,7 @@
         }
         
         return list.map(item => `
-          <div style="background: #1c1d24; border: 1px solid #2e303e; border-radius: 5px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+          <div class="sched-item" data-date="${dateStr}" data-id="${item.id}" style="background: #1c1d24; border: 1px solid #2e303e; border-radius: 5px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; gap: 6px; cursor: pointer;">
             <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
               <span style="font-size: 10px; font-weight: bold; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${item.title}</span>
               <span style="font-size: 8px; color: var(--text-muted, #9ca3af); display: flex; gap: 4px; align-items: center; margin-top: 1px;">
@@ -708,6 +708,8 @@
         const titleInput = container.querySelector('#sched-title-input');
         const timeInput = container.querySelector('#sched-time-input');
 
+        let editingSchedId = null;
+
         const handleAddSchedule = () => {
           const title = titleInput.value.trim();
           const time = timeInput.value || '09:00';
@@ -719,16 +721,44 @@
             schedules[dateStr] = [];
           }
 
-          const newSched = {
-            id: 'sched-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-            title: title,
-            time: time,
-            repeat: repeatSelect.value,
-            repeatCount: repeatCount.value || null,
-            repeatUntil: repeatUntil.value || null
-          };
+          if (editingSchedId) {
+            // Find across all dates because they might have changed the date
+            let foundOldDate = null;
+            let schedObj = null;
+            for (const d of Object.keys(schedules)) {
+              const match = schedules[d].find(s => s.id === editingSchedId);
+              if (match) {
+                foundOldDate = d;
+                schedObj = match;
+                break;
+              }
+            }
+            if (schedObj) {
+              schedObj.title = title;
+              schedObj.time = time;
+              schedObj.repeat = repeatSelect ? repeatSelect.value : 'none';
+              schedObj.repeatCount = repeatCount ? repeatCount.value : null;
+              schedObj.repeatUntil = repeatUntil ? repeatUntil.value : null;
+              
+              if (foundOldDate && foundOldDate !== dateStr) {
+                schedules[foundOldDate] = schedules[foundOldDate].filter(s => s.id !== editingSchedId);
+                schedules[dateStr].push(schedObj);
+              }
+            }
+            editingSchedId = null;
+            if (addBtn) addBtn.textContent = '추가';
+          } else {
+            const newSched = {
+              id: 'sched-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+              title: title,
+              time: time,
+              repeat: repeatSelect ? repeatSelect.value : 'none',
+              repeatCount: repeatCount ? repeatCount.value : null,
+              repeatUntil: repeatUntil ? repeatUntil.value : null
+            };
+            schedules[dateStr].push(newSched);
+          }
 
-          schedules[dateStr].push(newSched);
           localStorage.setItem('ameva_calendar_schedules_v2', JSON.stringify(schedules));
 
           titleInput.value = '';
@@ -766,6 +796,35 @@
               }
               localStorage.setItem('ameva_calendar_schedules_v2', JSON.stringify(schedules));
               refreshCalendar();
+            }
+          });
+        });
+
+        container.querySelectorAll('.sched-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            if (e.target.closest('.sched-del')) return;
+            const dateStr = e.currentTarget.getAttribute('data-date');
+            const schedId = e.currentTarget.getAttribute('data-id');
+            const sched = schedules[dateStr]?.find(s => s.id === schedId);
+            if (sched) {
+              editingSchedId = schedId;
+              if (titleInput) titleInput.value = sched.title;
+              if (timeInput) timeInput.value = sched.time;
+              if (repeatSelect) {
+                repeatSelect.value = sched.repeat;
+                if (sched.repeat !== 'none') {
+                  repeatCount.style.display = 'block';
+                  repeatUntil.style.display = 'block';
+                  repeatCount.value = sched.repeatCount || '';
+                  repeatUntil.value = sched.repeatUntil || '';
+                } else {
+                  repeatCount.style.display = 'none';
+                  repeatUntil.style.display = 'none';
+                }
+              }
+              if (addBtn) addBtn.textContent = '수정';
+              selectedDate = new Date(dateStr + 'T00:00:00');
+              currentDate.setTime(selectedDate.getTime());
             }
           });
         });

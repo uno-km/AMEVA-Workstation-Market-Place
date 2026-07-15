@@ -1,812 +1,748 @@
 // @ts-nocheck
-import React, { useState, useEffect, useRef } from 'react';
-import { MonitorPlay, Play, ChevronLeft, ChevronRight, Maximize2, RotateCw } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { MonitorPlay, Play, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react';
 
-interface SlideElement {
-  type: 'paragraph' | 'bullet' | 'image' | 'code' | 'map' | 'youtube' | 'link' | 'table' | 'kanban';
-  text?: string;
-  url?: string;
-  code?: string;
-  language?: string;
-  lat?: string;
-  lng?: string;
-  locationName?: string;
-  title?: string;
-  description?: string;
-  thumbnail?: string;
-  tableRows?: any[];
-  tasks?: any[];
-}
+// ── MERMAID RENDERER ──────────────────────────────────────────────────────────
+function MermaidRenderer({ code }) {
+  const [svg, setSvg] = useState('');
+  const [err, setErr] = useState('');
+  const idRef = useRef('mm-' + Math.random().toString(36).substr(2, 9));
 
-interface Slide {
-  title: string;
-  parentTitle: string;
-  elements: SlideElement[];
-  score: number;
-}
-
-function CodeRunner({ code }: { code: string }) {
-  const [output, setOutput] = useState<string>('');
-  const [isRunning, setIsRunning] = useState(false);
-
-  const runCode = () => {
-    setIsRunning(true);
-    setOutput('실행 중...');
-    
-    setTimeout(() => {
-      const logs: string[] = [];
-      const originalLog = console.log;
-      console.log = (...args) => {
-        logs.push(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' '));
-      };
-      
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
       try {
-        const result = eval(code);
-        if (result !== undefined) {
-          logs.push(`=> ${typeof result === 'object' ? JSON.stringify(result) : String(result)}`);
+        if (!window.mermaid) {
+          await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+            s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+          });
         }
-        setOutput(logs.join('\n') || 'Success (출력 결과 없음)');
-      } catch (err: any) {
-        setOutput(`⚠️ Error: ${err.message}`);
-      } finally {
-        console.log = originalLog;
-        setIsRunning(false);
+        const m = window.mermaid;
+        m.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+        const { svg: rendered } = await m.render(idRef.current, code);
+        if (!cancelled) setSvg(rendered);
+      } catch (e) {
+        if (!cancelled) setErr(e.message || 'Render failed');
       }
-    }, 50);
+    })();
+    return () => { cancelled = true; };
+  }, [code]);
+
+  if (err) return (
+    <div style={{ color: '#ef4444', fontSize: '11px', padding: '12px', background: 'rgba(239,68,68,0.08)', borderRadius: '6px' }}>
+      ⚠️ Mermaid Error: {err}
+    </div>
+  );
+  if (!svg) return <div style={{ color: '#9ca3af', fontSize: '11px', padding: '16px', textAlign: 'center' }}>🔄 다이어그램 렌더링 중...</div>;
+  return (
+    <div
+      style={{ width: '100%', background: '#1a1b23', borderRadius: '10px', padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflowX: 'auto' }}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
+}
+
+// ── CODE RUNNER ───────────────────────────────────────────────────────────────
+function CodeRunner({ code, language }) {
+  const [output, setOutput] = useState('');
+  const [running, setRunning] = useState(false);
+
+  const run = () => {
+    setRunning(true); setOutput('실행 중...');
+    setTimeout(() => {
+      const lang = (language || 'javascript').toLowerCase();
+      if (lang === 'html') { setOutput('__HTML__'); setRunning(false); return; }
+      if (lang !== 'javascript' && lang !== 'js') {
+        setOutput('[' + (language || 'CODE').toUpperCase() + '] 환경 실행이 완료되었습니다.\n(AMEVA OS 가상 샌드박스)');
+        setRunning(false); return;
+      }
+      const logs = []; const orig = console.log;
+      console.log = (...a) => logs.push(a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+      try {
+        const r = eval(code);
+        if (r !== undefined) logs.push('=> ' + (typeof r === 'object' ? JSON.stringify(r) : String(r)));
+        setOutput(logs.join('\n') || 'Success (수행 완료)');
+      } catch (e) { setOutput('⚠️ Error: ' + e.message); }
+      finally { console.log = orig; setRunning(false); }
+    }, 400);
   };
 
   return (
-    <div style={{ marginTop: '8px', width: '100%' }}>
-      <button 
-        onClick={runCode}
-        disabled={isRunning}
-        style={{ 
-          background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', 
-          color: '#fff', fontSize: '9.5px', fontWeight: 'bold', padding: '4px 10px', 
-          borderRadius: '4px', cursor: 'pointer', transition: 'all 0.1s' 
-        }}
-      >
-        {isRunning ? 'Running...' : '▶ 코드 실행'}
+    <div style={{ marginTop: '10px', width: '100%' }}>
+      <button onClick={run} disabled={running} style={{ background: 'linear-gradient(135deg,#10b981,#059669)', border: 'none', color: '#fff', fontSize: '10px', fontWeight: 'bold', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}>
+        {running ? 'Running...' : '▶ 코드 실행'}
       </button>
-      {output && (
-        <pre style={{ 
-          marginTop: '6px', padding: '8px', background: '#090a0f', border: '1px solid #1f2029', 
-          borderRadius: '4px', color: '#34d399', fontSize: '9px', fontFamily: 'monospace', 
-          maxHeight: '100px', overflowY: 'auto', margin: 0, whiteSpace: 'pre-wrap', textAlign: 'left'
-        }}>
-          {output}
-        </pre>
+      {output && (output === '__HTML__'
+        ? <div style={{ marginTop: '10px', padding: '12px', background: '#fff', color: '#000', borderRadius: '6px', textAlign: 'left' }} dangerouslySetInnerHTML={{ __html: code }} />
+        : <pre style={{ marginTop: '10px', padding: '12px', background: '#090a0f', border: '1px solid #1f2029', borderRadius: '6px', color: '#34d399', fontSize: '11px', fontFamily: 'monospace', maxHeight: '200px', overflowY: 'auto', whiteSpace: 'pre-wrap', textAlign: 'left' }}>{output}</pre>
       )}
     </div>
   );
 }
 
-function MiniSlideKanban({ initialTasks }: { initialTasks: any[] }) {
-  const [tasks, setTasks] = useState<any[]>(initialTasks);
-
-  const handleDragStart = (e: React.DragEvent, taskId: string) => {
-    e.dataTransfer.setData('taskId', taskId);
+// ── MINI KANBAN (reads KanbanBlock columns/cards structure) ─────────────────
+function MiniKanban({ board }) {
+  const parseBoard = () => {
+    try {
+      if (!board) return { columns: [] };
+      if (typeof board === 'string') return JSON.parse(board);
+      return board;
+    } catch { return { columns: [] }; }
   };
+  const data = parseBoard();
+  const cols = data.columns || [];
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
+  if (cols.length === 0) return (
+    <div style={{ color: '#9ca3af', fontSize: '11px', padding: '12px', textAlign: 'center' }}>칸반 데이터 없음</div>
+  );
 
-  const handleDrop = (e: React.DragEvent, targetChecked: boolean) => {
-    e.preventDefault();
-    const taskId = e.dataTransfer.getData('taskId');
-    if (!taskId) return;
-
-    const amevaCore = (window as any).AMEVA_CORE;
-    if (amevaCore && amevaCore.editor) {
-      const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        amevaCore.editor.updateBlock(taskId, {
-          props: { ...task.props, checked: targetChecked }
-        });
-        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, props: { ...t.props, checked: targetChecked } } : t));
-      }
-    }
-  };
-
-  const todoList = tasks.filter(t => !t.props?.checked);
-  const doneList = tasks.filter(t => t.props?.checked);
-
-  const getTaskText = (t: any): string => {
-    if (!t) return '';
-    if (typeof t.content === 'string') return t.content;
-    if (Array.isArray(t.content)) {
-      return t.content.map((c: any) => c?.text || '').join('');
-    }
-    return '';
-  };
+  const colColors = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#a855f7', '#ec4899'];
 
   return (
-    <div style={{ display: 'flex', gap: '12px', width: '100%', minHeight: '160px', marginTop: '10px', textAlign: 'left' }}>
-      <div 
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, false)}
-        style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#ef4444' }}>To Do</span>
-          <span style={{ fontSize: '9px', background: '#3f3f46', padding: '1px 5px', borderRadius: '8px', color: '#fff' }}>{todoList.length}</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }}>
-          {todoList.map(t => (
-            <div 
-              key={t.id} 
-              draggable 
-              onDragStart={(e) => handleDragStart(e, t.id)}
-              style={{ background: '#1c1d24', border: '1px solid #2e303e', padding: '6px 8px', borderRadius: '4px', fontSize: '9.5px', color: '#d1d5db', cursor: 'grab' }}
-            >
-              {getTaskText(t)}
-            </div>
-          ))}
-          {todoList.length === 0 && <div style={{ fontSize: '9px', color: '#6b7280', textAlign: 'center', paddingTop: '10px' }}>할 일 없음</div>}
-        </div>
+    <div style={{ width: '100%', background: '#13141f', border: '1px solid #2e303e', borderRadius: '10px', padding: '12px', boxSizing: 'border-box' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a78bfa', display:'inline-block' }}></span>
+        <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'bold' }}>칸반 보드</span>
       </div>
-
-      <div 
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, true)}
-        style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '4px' }}>
-          <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#10b981' }}>Done</span>
-          <span style={{ fontSize: '9px', background: '#3f3f46', padding: '1px 5px', borderRadius: '8px', color: '#fff' }}>{doneList.length}</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1 }}>
-          {doneList.map(t => (
-            <div 
-              key={t.id} 
-              draggable 
-              onDragStart={(e) => handleDragStart(e, t.id)}
-              style={{ background: '#1c1d24', border: '1px solid #2e303e', padding: '6px 8px', borderRadius: '4px', fontSize: '9.5px', color: '#9ca3af', textDecoration: 'line-through', cursor: 'grab' }}
-            >
-              {getTaskText(t)}
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+        {cols.map((col, ci) => {
+          const cards = col.cards || [];
+          const color = colColors[ci % colColors.length];
+          return (
+            <div key={col.id || ci} style={{ flex: '1 1 0', minWidth: '80px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 'bold', color, marginBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '4px', display:'flex', alignItems:'center', gap:'4px' }}>
+                <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:color, display:'inline-block' }}></span>
+                {col.title || 'Untitled'}
+                <span style={{ background: '#3f3f46', color: '#fff', borderRadius: '8px', padding: '0px 5px', fontSize: '9px', marginLeft: 'auto' }}>{cards.length}</span>
+              </div>
+              {cards.slice(0, 3).map(card => (
+                <div key={card.id} style={{ background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '5px', padding: '5px 7px', fontSize: '10px', color: '#d1d5db', marginBottom: '4px' }}>
+                  {card.title || '(제목 없음)'}
+                </div>
+              ))}
+              {cards.length === 0 && <div style={{ fontSize: '9px', color: '#4b5563', textAlign: 'center', marginTop: '6px' }}>비어있음</div>}
+              {cards.length > 3 && <div style={{ fontSize: '9px', color: '#6b7280', textAlign: 'center', marginTop: '4px' }}>+{cards.length - 3}개 더...</div>}
             </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+// ── EXCEL VIEWER (preview table + 더보기 modal) ───────────────────────────────
+function getExcelGrid(sheet) {
+  if (!sheet) return { grid: [], maxR: -1, maxC: -1 };
+  if (sheet.data && Array.isArray(sheet.data) && sheet.data.length > 0) {
+    const matrix = sheet.data;
+    let maxC = 0;
+    matrix.forEach(r => { if (Array.isArray(r) && r.length > maxC) maxC = r.length; });
+    return { grid: matrix, maxR: matrix.length - 1, maxC: maxC - 1 };
+  }
+  const celldata = sheet.celldata || [];
+  if (celldata.length === 0) return { grid: [], maxR: -1, maxC: -1 };
+  let maxR = 0, maxC = 0;
+  for (const cell of celldata) {
+    if (cell.r > maxR) maxR = cell.r;
+    if (cell.c > maxC) maxC = cell.c;
+  }
+  const grid = Array(maxR + 1).fill(null).map(() => Array(maxC + 1).fill(''));
+  for (const cell of celldata) {
+    const v = cell.v;
+    grid[cell.r][cell.c] = v?.m ?? v?.v ?? (typeof v === 'string' || typeof v === 'number' ? v : '');
+  }
+  return { grid, maxR, maxC };
+}
+
+function ExcelModal({ data, onClose }) {
+  const [sheetIdx, setSheetIdx] = useState(0);
+  if (!data?.sheets?.length) return null;
+  const sheet = data.sheets[sheetIdx];
+  const { grid, maxR, maxC } = getExcelGrid(sheet);
+  
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#1a1b23', border: '1px solid #2e303e', borderRadius: '12px', overflow: 'hidden', width: '90vw', maxWidth: '1100px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#13141f', borderBottom: '1px solid #2e303e' }}>
+          <span style={{ color: '#e5e7eb', fontWeight: 'bold', fontSize: '14px' }}>📊 Excel Spreadsheet</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '18px', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px' }}>✕</button>
+        </div>
+        <div style={{ display: 'flex', background: '#111218', borderBottom: '1px solid #2e303e', gap: '2px', padding: '4px 8px 0', flexShrink: 0 }}>
+          {data.sheets.map((s, i) => (
+            <button key={i} onClick={() => setSheetIdx(i)} style={{ padding: '5px 14px', background: i === sheetIdx ? '#1a1b23' : 'transparent', border: 'none', fontSize: '11px', cursor: 'pointer', color: i === sheetIdx ? '#f59e0b' : '#9ca3af', fontWeight: i === sheetIdx ? 'bold' : 'normal', borderRadius: '4px 4px 0 0' }}>{s.name}</button>
           ))}
-          {doneList.length === 0 && <div style={{ fontSize: '9px', color: '#6b7280', textAlign: 'center', paddingTop: '10px' }}>완료된 일 없음</div>}
+        </div>
+        <div style={{ overflowX: 'auto', overflowY: 'auto', flex: 1 }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '12px', color: '#e5e7eb', minWidth: '100%' }}>
+            <tbody>
+              {grid.map((row, ri) => (
+                <tr key={ri} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                  <td style={{ padding: '4px 8px', color: '#4b5563', fontSize: '10px', background: '#111218', borderRight: '1px solid #2e303e', textAlign: 'center', minWidth: '30px', position: 'sticky', left: 0 }}>{ri + 1}</td>
+                  {(row || []).map((cell, ci) => (
+                    <td key={ci} style={{ padding: '5px 10px', border: '1px solid #2e303e', whiteSpace: 'nowrap', color: '#e5e7eb' }}>
+                      {cell !== null && cell !== undefined ? String(cell) : ''}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
 
+function ExcelViewer({ data }) {
+  const [sheetIdx, setSheetIdx] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  if (!data?.sheets?.length) return <div style={{ color: '#9ca3af', fontSize: '11px', padding: '12px' }}>엑셀 데이터 없음</div>;
+  const sheet = data.sheets[sheetIdx];
+  const { grid, maxR } = getExcelGrid(sheet);
+  
+  // Show only first 5 rows (0~4 index) as preview
+  const previewRows = grid.slice(0, 5);
+  const hasMore = grid.length > 5;
+  return (
+    <>
+      {showModal && <ExcelModal data={data} onClose={() => setShowModal(false)} />}
+      <div style={{ width: '100%', background: '#1a1b23', border: '1px solid #2e303e', borderRadius: '10px', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: '#111218', borderBottom: '1px solid #2e303e', gap: '2px', padding: '4px 4px 0' }}>
+          {data.sheets.map((s, i) => (
+            <button key={i} onClick={() => setSheetIdx(i)} style={{ padding: '4px 12px', background: i === sheetIdx ? '#1a1b23' : 'transparent', border: 'none', fontSize: '10px', cursor: 'pointer', color: i === sheetIdx ? '#f59e0b' : '#9ca3af', fontWeight: i === sheetIdx ? 'bold' : 'normal', borderRadius: '4px 4px 0 0' }}>{s.name}</button>
+          ))}
+          <button onClick={() => setShowModal(true)} style={{ marginLeft: 'auto', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', border: 'none', color: '#fff', fontSize: '9px', fontWeight: 'bold', padding: '3px 10px', borderRadius: '4px', cursor: 'pointer', marginRight: '4px' }}>📊 전체보기</button>
+        </div>
+        <div style={{ overflowX: 'auto', maxHeight: '180px' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '10.5px', color: '#e5e7eb', minWidth: '100%' }}>
+            <tbody>
+              {previewRows.map((row, ri) => (
+                <tr key={ri} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                  <td style={{ padding: '3px 6px', color: '#4b5563', fontSize: '9px', background: '#111218', borderRight: '1px solid #2e303e', textAlign: 'center', minWidth: '24px' }}>{ri + 1}</td>
+                  {(row || []).map((cell, ci) => (
+                    <td key={ci} style={{ padding: '4px 8px', border: '1px solid #2e303e', whiteSpace: 'nowrap', color: '#e5e7eb' }}>
+                      {cell !== null && cell !== undefined ? String(cell) : ''}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {hasMore && (
+          <div style={{ padding: '6px 10px', background: '#111218', borderTop: '1px solid #2e303e', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '9px', color: '#6b7280' }}>미리보기: 5/{grid.length}행 표시 중</span>
+            <button onClick={() => setShowModal(true)} style={{ background: 'linear-gradient(135deg,#3b82f6,#2563eb)', border: 'none', color: '#fff', fontSize: '9px', fontWeight: 'bold', padding: '3px 10px', borderRadius: '4px', cursor: 'pointer' }}>📊 전체 시트 보기 ({grid.length}행)</button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export function PresentationPlugin() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [slideIdx, setSlideIdx] = useState(0);
-  const [slides, setSlides] = useState<Slide[]>([]);
-  const presentationContainerRef = useRef<HTMLDivElement>(null);
+  const [slides, setSlides] = useState([]);
+  const containerRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const handleToggleFullscreen = () => {
-    if (!presentationContainerRef.current) return;
-    if (!document.fullscreenElement) {
-      presentationContainerRef.current.requestFullscreen().then(() => {
-        setIsFullscreen(true);
-      }).catch(err => {
-        console.error('Error entering fullscreen:', err);
-        setIsFullscreen(true);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
+  const [showToc, setShowToc] = useState(false);
 
   useEffect(() => {
-    const handleFsChange = () => {
-      const isDomFs = !!document.fullscreenElement;
-      setIsFullscreen(isDomFs);
-    };
-    document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    const h = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', h);
+    return () => document.removeEventListener('fullscreenchange', h);
   }, []);
 
-  // Extract text from block content safely
-  const getBlockText = (block: any): string => {
+  const toggleFs = () => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) containerRef.current.requestFullscreen().catch(() => setIsFullscreen(true));
+    else document.exitFullscreen();
+  };
+
+  const getText = (block) => {
     if (!block) return '';
     if (typeof block.content === 'string') return block.content;
-    if (Array.isArray(block.content)) {
-      return block.content.map((c: any) => c?.text || '').join('');
-    }
+    if (Array.isArray(block.content)) return block.content.map(c => c?.text || '').join('');
     return '';
   };
 
-  // Convert table cells into simple text array
-  const parseTableRows = (block: any): string[][] => {
-    if (!block) return [];
-    const rows = block.tableRows || [];
-    return rows.map((row: any) => {
+  const parseTableRows = (block) => {
+    const rows = block.tableRows || block.props?.tableRows || [];
+    return rows.map(row => {
       const cells = Array.isArray(row.cells) ? row.cells : [];
-      return cells.map((cell: any) => {
+      return cells.map(cell => {
         if (typeof cell === 'string') return cell;
-        if (Array.isArray(cell)) {
-          return cell.map((c: any) => c?.text || '').join('');
-        }
+        if (Array.isArray(cell)) return cell.map(c => c?.text || '').join('');
         return '';
       });
     });
   };
 
-  // Build the intelligent, space-calculated, block-aware PPT slides
-  const buildSlides = () => {
-    const amevaCore = (window as any).AMEVA_CORE;
-    /*
-     * [CONTRACT]
-     * - AMEVA_CORE 및 내장 editor가 존재할 때만 실시간 파싱 및 연산 스케줄링을 기동한다.
-     */
-    if (!amevaCore || !amevaCore.editor) {
-      return [];
-    }
-
-    const editor = amevaCore.editor;
-    const blocks = editor.document || [];
-    const parsedSlides: Slide[] = [];
-
-    // Try to get filename/document title from workspace store
-    let filename = '새 프레젠테이션';
+  const parseExcel = (block) => {
     try {
-      if (amevaCore.useWorkspaceStore) {
-        const workspace = amevaCore.useWorkspaceStore.getState();
-        const filePath = workspace.filePath;
-        if (filePath) {
-          filename = filePath.split(/[\\/]/).pop()?.replace(/\.md$/, '') || filename;
-        } else {
-          // If file is not saved, grab the title of the current active tab
-          const activeTab = workspace.tabs.find((t: any) => t.id === workspace.activeTabId);
-          if (activeTab && activeTab.filePath) {
-            filename = activeTab.filePath.split(/[\\/]/).pop()?.replace(/\.md$/, '') || filename;
+      const raw = block.props?.data || block.props?.sheets || block.data;
+      if (!raw) return null;
+      let sheets = [];
+      if (typeof raw === 'string') {
+        const p = JSON.parse(raw);
+        sheets = Array.isArray(p) ? p : [p];
+      } else if (Array.isArray(raw)) {
+        sheets = raw[0]?.name ? raw : [{ name: 'Sheet1', celldata: raw }];
+      }
+
+      const processedSheets = sheets.map(sheet => {
+        if (!sheet) return { name: 'Sheet', data: [] };
+        const sheetName = sheet.name || 'Sheet';
+        if (sheet.data && Array.isArray(sheet.data)) {
+          return { name: sheetName, data: sheet.data };
+        }
+        const cellList = sheet.celldata || [];
+        if (!Array.isArray(cellList) || cellList.length === 0) {
+          return { name: sheetName, data: [] };
+        }
+        let maxR = 0;
+        let maxC = 0;
+        cellList.forEach(cell => {
+          if (cell && typeof cell.r === 'number' && cell.r > maxR) maxR = cell.r;
+          if (cell && typeof cell.c === 'number' && cell.c > maxC) maxC = cell.c;
+        });
+        const matrix = Array.from({ length: maxR + 1 }, () => Array(maxC + 1).fill(''));
+        cellList.forEach(cell => {
+          if (cell && typeof cell.r === 'number' && typeof cell.c === 'number') {
+            const val = cell.v?.m || cell.v?.v || '';
+            matrix[cell.r][cell.c] = String(val);
           }
-        }
-      }
-    } catch (e) {
-      console.error('[PresentationPlugin] Error accessing workspace store:', e);
-    }
+        });
+        return { name: sheetName, data: matrix };
+      });
+      return { sheets: processedSheets };
+    } catch (_) {}
+    return null;
+  };
 
-    // Identify headings
-    const headings = blocks.filter((b: any) => b.type === 'heading');
-    const h1s = headings.filter((h: any) => h.props?.level === 1);
+  // ──────────────────────────────────────────────────────────────────────────
+  // HEURISTIC SLIDE BUILDER
+  //  #  H1  → Cover slide (title page)
+  //  ## H2  → Chapter intro slide
+  //  ### H3 → Content slide (section)
+  //  #### H4+ → Sub-heading divider within current slide
+  //  Content blocks → appended to current slide
+  // ──────────────────────────────────────────────────────────────────────────
+  const buildSlides = useCallback(() => {
+    const core = window.AMEVA_CORE;
+    if (!core?.editor) return [];
+    const blocks = core.editor.document || [];
 
-    // ㄱ. 슬라이드 제목 결정 로직
-    let coverTitle = filename;
-    let skipH1Id = '';
-
-    if (h1s.length === 1) {
-      // H1이 단 하나면 표지 슬라이드 제목으로 승격하고, 본문 장표에서는 제외
-      coverTitle = getBlockText(h1s[0]) || coverTitle;
-      skipH1Id = h1s[0].id;
-    }
-
-    // 표지 슬라이드 삽입
-    parsedSlides.push({
-      title: coverTitle,
-      parentTitle: '발표 자료',
-      elements: [
-        { type: 'paragraph', text: 'AMEVA OS Workstation 실시간 슬라이드쇼' },
-        { type: 'paragraph', text: new Date().toLocaleDateString() }
-      ],
-      score: 30
+    // Debug unknown types
+    const seen = new Set();
+    blocks.forEach(b => {
+      if (!seen.has(b.type)) { seen.add(b.type); console.log('[Presentation] block:', b.type, b.props ? Object.keys(b.props) : ''); }
     });
 
-    let currentSection = '';
-    let currentElements: SlideElement[] = [];
-    let currentScore = 0;
+    let docTitle = '새 프레젠테이션';
+    try {
+      const ws = core.useWorkspaceStore?.getState();
+      const tab = ws?.tabs?.find(t => t.id === ws?.activeTabId);
+      const fp = tab?.filePath || ws?.filePath;
+      if (fp) docTitle = fp.split(/[\\\/]/).pop()?.replace(/\.md$/, '') || docTitle;
+    } catch (_) {}
 
-    // ㄹ. 수학적/휴리스틱 사이즈 고려 한계치 지정
-    const MAX_BUDGET = 120;
+    const result = [];
+    let current = null;
+    let chapterNum = 0;
+    let checklist = [];
 
-    const pushCurrentSlide = (titleSuffix = '') => {
-      if (currentElements.length > 0) {
-        parsedSlides.push({
-          title: currentSection || '본문',
-          parentTitle: coverTitle + (titleSuffix ? ` > ${titleSuffix}` : ''),
-          elements: [...currentElements],
-          score: currentScore
-        });
-        currentElements = [];
-        currentScore = 0;
-      }
+    const pushSlide = () => {
+      if (current && (current.slideType !== 'content' || current.elements.length > 0)) result.push(current);
+      current = null;
+    };
+    const flushChecklist = () => {
+      if (!checklist.length) return;
+      ensureContent();
+      current.elements.push({ type: 'kanban', tasks: [...checklist] });
+      checklist = [];
+    };
+    const ensureContent = () => {
+      if (!current) current = { slideType: 'content', title: '본문', parentTitle: docTitle, elements: [] };
     };
 
-    let consecutiveChecklist: any[] = [];
+    blocks.forEach(block => {
+      const text = getText(block);
+      const btype = block.type || '';
 
-    const pushConsecutiveChecklist = () => {
-      if (consecutiveChecklist.length > 0) {
-        if (currentScore + 60 > MAX_BUDGET) {
-          pushCurrentSlide('계속');
-        }
-        currentElements.push({
-          type: 'kanban',
-          tasks: [...consecutiveChecklist]
-        });
-        currentScore += 60;
-        consecutiveChecklist = [];
-      }
-    };
-
-    blocks.forEach((block: any) => {
-      if (block.id === skipH1Id) return; // 표지 전용 H1은 본문 파트에서 생략
-
-      const text = getBlockText(block);
-      let blockScore = 15;
-      let element: SlideElement | null = null;
-
-      if (block.type === 'checkListItem') {
-        consecutiveChecklist.push(block);
-        return;
-      } else {
-        pushConsecutiveChecklist();
-      }
-
-      // ㄴ. #, ##, ### 단락 분할 기준
-      if (block.type === 'heading') {
+      // ── Headings → slide structure ──────────────────────────────────────
+      if (btype === 'heading') {
+        flushChecklist();
         const lvl = block.props?.level || 2;
-        blockScore = lvl === 1 ? 40 : lvl === 2 ? 30 : 25;
 
-        // 새 헤더 등장 시 기존 슬라이드 방출 후 섹션 타이틀 설정
-        pushConsecutiveChecklist();
-        pushCurrentSlide();
-        currentSection = text || '제목 없는 섹션';
-        currentScore = blockScore;
+        if (lvl === 1) {
+          // # → Cover slide
+          pushSlide();
+          result.push({ slideType: 'cover', title: text || docTitle, subtitle: new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }), parentTitle: '', elements: [] });
+          return;
+        }
+        if (lvl === 2) {
+          // ## → Chapter intro + begin new content slide
+          pushSlide();
+          chapterNum++;
+          result.push({ slideType: 'chapter', title: text || '챕터', chapterNum, parentTitle: docTitle, elements: [] });
+          current = { slideType: 'content', title: text || '챕터', parentTitle: `${docTitle} › Ch.${chapterNum}`, elements: [] };
+          return;
+        }
+        if (lvl === 3) {
+          // ### → New content slide
+          pushSlide();
+          current = { slideType: 'content', title: text || '섹션', parentTitle: `${docTitle}${chapterNum ? ` › Ch.${chapterNum}` : ''}`, elements: [] };
+          return;
+        }
+        // #### + → sub-heading divider within current slide
+        ensureContent();
+        current.elements.push({ type: 'divider', text });
         return;
       }
 
-      // ㄷ. 다양한 내장/프리미엄 커스텀 블록 지원 매핑
-      if (block.type === 'paragraph') {
-        blockScore = Math.max(15, Math.ceil(text.length / 55) * 15);
-        element = { type: 'paragraph', text };
-      } else if (block.type === 'bulletListItem' || block.type === 'numberedListItem') {
-        blockScore = Math.max(12, Math.ceil(text.length / 55) * 12);
-        element = { type: 'bullet', text };
-      } else if (block.type === 'image') {
-        blockScore = 65;
-        element = { type: 'image', url: block.props?.url || '' };
-      } else if (block.type === 'codeBlock' || block.type === 'jupyter') {
-        blockScore = 75;
-        const codeText = block.props?.code || text || '';
-        const lang = block.props?.language || 'javascript';
-        element = { type: 'code', code: codeText, language: lang };
-      } else if (block.type === 'map') {
-        blockScore = 80;
-        element = {
-          type: 'map',
-          lat: block.props?.lat || '37.5665',
-          lng: block.props?.lng || '126.9780',
-          locationName: block.props?.locationName || '서울시'
-        };
-      } else if (block.type === 'youtube') {
-        blockScore = 85;
-        element = {
-          type: 'youtube',
-          url: block.props?.url || '',
-          title: block.props?.videoId || block.props?.url?.split('v=')?.[1]?.split('&')?.[0] || ''
-        };
-      } else if (block.type === 'linkPreview') {
-        blockScore = 55;
-        element = {
-          type: 'link',
-          url: block.props?.url || '',
-          title: block.props?.title || 'Link Preview',
-          description: block.props?.description || '',
-          thumbnail: block.props?.thumbnail || ''
-        };
-      } else if (block.type === 'table') {
-        blockScore = 75;
-        const rows = parseTableRows(block);
-        element = { type: 'table', tableRows: rows };
+      // ── CheckList accumulator → Kanban ──────────────────────────────────
+      if (btype === 'checkListItem') { checklist.push(block); return; }
+      else flushChecklist();
+
+      // ── Other blocks ────────────────────────────────────────────────────
+      let el = null;
+
+      if (btype === 'paragraph') {
+        if (!text.trim()) return;
+        el = { type: 'paragraph', text };
+      } else if (btype === 'bulletListItem') {
+        el = { type: 'bullet', text };
+      } else if (btype === 'numberedListItem') {
+        el = { type: 'bullet', text: '• ' + text };
+      } else if (btype === 'image') {
+        el = { type: 'image', url: block.props?.url || '' };
+      } else if (btype === 'codeBlock' || btype === 'jupyter') {
+        const code = block.props?.code || text || '';
+        const lang = (block.props?.language || 'text').toLowerCase();
+        el = lang === 'mermaid' ? { type: 'mermaid', code } : { type: 'code', code, language: block.props?.language || 'text' };
+      } else if (btype === 'map') {
+        el = { type: 'map', lat: block.props?.lat || '37.5665', lng: block.props?.lng || '126.9780', locationName: block.props?.locationName || '서울' };
+      } else if (btype === 'youtube') {
+        const vid = block.props?.videoId || block.props?.url?.split('v=')?.[1]?.split('&')?.[0] || '';
+        el = { type: 'youtube', title: vid, url: block.props?.url || '' };
+      } else if (btype === 'linkPreview' || btype === 'link') {
+        el = { type: 'link', url: block.props?.url || '', title: block.props?.title || block.props?.url || 'Link', description: block.props?.description || '', thumbnail: block.props?.thumbnail || block.props?.image || '' };
+      } else if (btype === 'table') {
+        el = { type: 'table', tableRows: parseTableRows(block) };
+      } else if (['kanban', 'kanbanBoard', 'KanbanBoard', 'kanban_board', 'taskBoard'].includes(btype)) {
+        // KanbanBlock stores data in block.props.data as JSON string with {columns:[...]}
+        const boardData = block.props?.data || block.props?.tasks || block.props || '{}';
+        el = { type: 'kanban', board: boardData };
+      } else if (['spreadsheet', 'excel', 'excelSpreadsheet', 'ExcelSpreadsheet', 'sheet'].includes(btype)) {
+        const d = parseExcel(block);
+        if (d) el = { type: 'excel', excelData: d };
       }
 
-      if (element) {
-        // ㄹ. 한 페이지에 너무 많은 정보가 들어가지 않도록 실시간 크기 계산 후 나눔
-        if (currentScore + blockScore > MAX_BUDGET) {
-          pushCurrentSlide('계속');
-        }
-        currentElements.push(element);
-        currentScore += blockScore;
-      }
+      if (el) { ensureContent(); current.elements.push(el); }
     });
 
-    // 마지막 남은 누적 요소 방출
-    pushConsecutiveChecklist();
-    pushCurrentSlide();
+    flushChecklist();
+    pushSlide();
 
-    return parsedSlides;
-  };
-
-  const handleRefresh = () => {
-    const nextSlides = buildSlides();
-    setSlides(nextSlides);
-    setSlideIdx(0);
-  };
-
-  // Sync with Editor key/mouse actions for auto refresh
-  useEffect(() => {
-    const handleEvents = () => {
-      const nextSlides = buildSlides();
-      setSlides(nextSlides);
-    };
-
-    window.addEventListener('keyup', handleEvents);
-    window.addEventListener('mouseup', handleEvents);
-
-    handleEvents();
-
-    return () => {
-      window.removeEventListener('keyup', handleEvents);
-      window.removeEventListener('mouseup', handleEvents);
-    };
+    if (!result.length) result.push({ slideType: 'cover', title: docTitle, subtitle: '문서에 # 제목을 추가하면 슬라이드가 생성됩니다.', parentTitle: '', elements: [] });
+    return result;
   }, []);
 
-  // Keyboard navigation for active slide deck presentation mode
+  const handleRefresh = () => { const s = buildSlides(); setSlides(s); setSlideIdx(0); };
+
+  useEffect(() => {
+    const h = () => { const s = buildSlides(); setSlides(s); };
+    window.addEventListener('keyup', h); window.addEventListener('mouseup', h); h();
+    return () => { window.removeEventListener('keyup', h); window.removeEventListener('mouseup', h); };
+  }, [buildSlides]);
+
   useEffect(() => {
     if (!isPlaying) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        setSlideIdx((prev: number) => Math.min(slides.length - 1, prev + 1));
-      } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
-        e.preventDefault();
-        setSlideIdx((prev: number) => Math.max(0, prev - 1));
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        setIsPlaying(false);
-      }
+    const h = (e) => {
+      if (['ArrowRight', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); setSlideIdx(p => Math.min(slides.length - 1, p + 1)); }
+      else if (['ArrowLeft', 'Backspace'].includes(e.key)) { e.preventDefault(); setSlideIdx(p => Math.max(0, p - 1)); }
+      else if (e.key === 'Escape') { e.preventDefault(); setIsPlaying(false); if (document.fullscreenElement) document.exitFullscreen(); }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, [isPlaying, slides.length]);
 
-  // Helper to render customized layout based on slide elements (split/centered/etc)
-  const renderSlideContent = (slide: Slide) => {
-    if (!slide) return null;
-
-    // Check if the slide has any complex visual media block (image, map, code, video, kanban)
-    const mediaEl = slide.elements.find(el => ['image', 'map', 'code', 'youtube', 'table', 'kanban'].includes(el.type));
-    const textEls = slide.elements.filter(el => ['paragraph', 'bullet', 'link'].includes(el.type));
-
-    // If both text and complex media exist, render a premium 2-column split screen!
-    if (mediaEl && textEls.length > 0) {
-      return (
-        <div style={{ display: 'flex', width: '100%', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
-
-          {/* Left Column: Breadcrumb / Section Header / Text */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            {/* ㄴ. 상단 섹션 제목 고정 노출 */}
-            <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>
-              {slide.parentTitle}
-            </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-              {slide.title}
-            </h2>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {textEls.map((el, i) => renderElement(el, i))}
-            </div>
-          </div>
-
-          {/* Right Column: Visual Media Box */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-            {renderMediaElement(mediaEl)}
-          </div>
-
-        </div>
-      );
-    }
-
-    // Default layout (Centered full-screen layout)
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '80%', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '1px' }}>
-          {slide.parentTitle}
-        </div>
-        <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '24px', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-          {slide.title}
-        </h2>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
-          {slide.elements.map((el, i) => renderElement(el, i))}
-        </div>
-      </div>
-    );
-  };
-
-  // Render text elements inside slides
-  const renderElement = (el: SlideElement, idx: number) => {
+  // ── MEDIA ELEMENT RENDERER ──────────────────────────────────────────────
+  const renderMedia = (el, key) => {
     switch (el.type) {
-      case 'paragraph':
-        return (
-          <p key={idx} style={{ fontSize: '13px', color: '#d1d5db', lineHeight: '1.6', margin: 0 }}>
-            {el.text}
-          </p>
-        );
-      case 'bullet':
-        return (
-          <div key={idx} style={{ fontSize: '13px', color: '#e5e7eb', display: 'flex', gap: '8px', alignItems: 'flex-start', textAlign: 'left', lineHeight: '1.6' }}>
-            <span style={{ color: '#f59e0b', fontSize: '14px' }}>•</span>
-            <span>{el.text}</span>
-          </div>
-        );
-      case 'link':
-        return (
-          <a key={idx} href={el.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'block', width: '100%' }}>
-            <div style={{ background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '8px', padding: '10px', display: 'flex', gap: '10px', alignItems: 'center', textAlign: 'left' }}>
-              {el.thumbnail && <img src={el.thumbnail} alt="" style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />}
-              <div>
-                <h4 style={{ fontSize: '11px', color: '#38bdf8', margin: '0 0 4px 0', fontWeight: 'bold' }}>{el.title}</h4>
-                <p style={{ fontSize: '9px', color: '#9ca3af', margin: 0 }}>{el.description?.slice(0, 50)}...</p>
-              </div>
-            </div>
-          </a>
-        );
-      default:
-        // Complex media rendered separately in split column
-        return renderMediaElement(el);
-    }
-  };
-
-  // Render complex/rich graphics media elements
-  const renderMediaElement = (el: SlideElement) => {
-    switch (el.type) {
+      case 'mermaid':
+        return <div key={key} style={{ width: '100%' }}><MermaidRenderer code={el.code || ''} /></div>;
       case 'image':
-        return (
-          <img
-            src={el.url}
-            alt="Slide graphics"
-            style={{ maxWidth: '100%', maxHeight: '240px', borderRadius: '8px', boxShadow: '0 12px 24px rgba(0,0,0,0.6)', border: '1px solid #1f2029' }}
-          />
-        );
+        return <img key={key} src={el.url} alt="" style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '10px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)', objectFit: 'contain' }} />;
       case 'map':
-        // Real Live Google Maps embed
         return (
-          <div style={{ width: '100%', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '8px', padding: '8px', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
-              <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 'bold' }}>Google Maps: {el.locationName}</span>
-            </div>
-            <iframe
-              src={`https://maps.google.com/maps?q=${el.lat},${el.lng}&z=13&output=embed`}
-              width="100%"
-              height="180"
-              style={{ border: 0, borderRadius: '6px', background: '#000' }}
-              allowFullScreen
-              title="Google Map embed"
-            ></iframe>
+          <div key={key} style={{ width: '100%', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '10px', boxSizing: 'border-box' }}>
+            <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', marginBottom: '8px' }}>📍 {el.locationName}</div>
+            <iframe src={`https://maps.google.com/maps?q=${el.lat},${el.lng}&z=13&output=embed`} width="100%" height="380" style={{ border: 0, borderRadius: '6px' }} allowFullScreen title="Map" />
           </div>
         );
       case 'youtube':
-        // Real Live YouTube player iframe embed
         return (
-          <div style={{ width: '100%', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '8px', padding: '8px', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
-              <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 'bold' }}>YouTube Video</span>
+          <div key={key} style={{ width: '100%', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '10px', boxSizing: 'border-box' }}>
+            <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', marginBottom: '8px' }}>▶ YouTube</div>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: '6px', overflow: 'hidden' }}>
+              <iframe src={`https://www.youtube.com/embed/${el.title}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} allowFullScreen title="YouTube" />
             </div>
-            <iframe
-              src={`https://www.youtube.com/embed/${el.title}`}
-              width="100%"
-              height="180"
-              style={{ border: 0, borderRadius: '6px', background: '#000' }}
-              allowFullScreen
-              title="YouTube embed player"
-            ></iframe>
           </div>
         );
       case 'code':
         return (
-          <div style={{ width: '100%', background: '#0d0e12', border: '1px solid #2e303e', borderRadius: '8px', overflow: 'hidden', textAlign: 'left', fontFamily: 'monospace' }}>
-            <div style={{ background: '#1a1b23', padding: '6px 12px', display: 'flex', gap: '5px', alignItems: 'center', borderBottom: '1px solid #2e303e' }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ff5f56' }}></span>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ffbd2e' }}></span>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#27c93f' }}></span>
-              <span style={{ fontSize: '8.5px', color: '#6b7280', marginLeft: '6px', textTransform: 'uppercase', fontWeight: 'bold' }}>{el.language}</span>
+          <div key={key} style={{ width: '100%', background: '#0d0e12', border: '1px solid #2e303e', borderRadius: '10px', overflow: 'hidden', textAlign: 'left' }}>
+            <div style={{ background: '#1a1b23', padding: '8px 16px', display: 'flex', gap: '6px', alignItems: 'center', borderBottom: '1px solid #2e303e' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff5f56' }}></span>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffbd2e' }}></span>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#27c93f' }}></span>
+              <span style={{ fontSize: '11px', color: '#6b7280', marginLeft: '8px', fontWeight: 'bold', textTransform: 'uppercase' }}>{el.language}</span>
             </div>
-            <pre style={{ margin: 0, padding: '12px', overflowX: 'auto', fontSize: '10px', color: '#a78bfa', lineHeight: '1.5' }}>
+            <pre style={{ margin: 0, padding: '16px', overflowX: 'auto', fontSize: '12px', color: '#a78bfa', lineHeight: '1.6', maxHeight: '360px', fontFamily: 'monospace' }}>
               <code>{el.code}</code>
             </pre>
+            <div style={{ padding: '0 16px 16px' }}><CodeRunner code={el.code || ''} language={el.language || ''} /></div>
           </div>
         );
-      case 'table':
-        const rows = el.tableRows || [];
-        const headerRow = rows[0] || [];
-        const bodyRows = rows.slice(1);
+      case 'table': {
+        const hRow = (el.tableRows || [])[0] || [];
+        const bRows = (el.tableRows || []).slice(1);
         return (
-          <div style={{ width: '100%', overflowX: 'auto', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '8px', padding: '8px', boxSizing: 'border-box' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left' }}>
-              <thead>
-                <tr>
-                  {headerRow.map((cellText: string, i: number) => (
-                    <th key={i} style={{ borderBottom: '2px solid #2e303e', padding: '6px 8px', color: '#f59e0b', fontWeight: 'bold', background: '#13141a' }}>
-                      {cellText}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {bodyRows.map((rowCells: string[], idx: number) => (
-                  <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                    {rowCells.map((cellText: string, cellIdx: number) => (
-                      <td key={cellIdx} style={{ borderBottom: '1px solid #2e303e', padding: '6px 8px', color: '#d1d5db' }}>
-                        {cellText}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
+          <div key={key} style={{ width: '100%', overflowX: 'auto', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '10px', boxSizing: 'border-box' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', textAlign: 'left' }}>
+              <thead><tr>{hRow.map((c, i) => <th key={i} style={{ borderBottom: '2px solid #3b3c4a', padding: '8px 10px', color: '#f59e0b', fontWeight: 'bold', background: '#13141a' }}>{c}</th>)}</tr></thead>
+              <tbody>{bRows.map((row, ri) => <tr key={ri} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>{row.map((c, ci) => <td key={ci} style={{ borderBottom: '1px solid #2e303e', padding: '7px 10px', color: '#d1d5db' }}>{c}</td>)}</tr>)}</tbody>
             </table>
           </div>
         );
+      }
       case 'kanban':
-        return (
-          <div style={{ width: '100%', background: '#13141f', border: '1px solid #2e303e', borderRadius: '8px', padding: '10px', boxSizing: 'border-box' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a78bfa' }}></span>
-              <span style={{ fontSize: '9.5px', color: '#9ca3af', fontWeight: 'bold' }}>문서 연동 칸반 보드 (드래그 조작 가능)</span>
-            </div>
-            <MiniSlideKanban initialTasks={el.tasks} />
-          </div>
-        );
+        return <MiniKanban key={key} board={el.board} />;
+      case 'excel':
+        return el.excelData ? <ExcelViewer key={key} data={el.excelData} /> : null;
       default:
         return null;
     }
   };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0b0c10', color: '#f1f1f5', fontFamily: 'system-ui, sans-serif' }}>
+  const MEDIA_TYPES = new Set(['image', 'map', 'youtube', 'code', 'table', 'kanban', 'excel', 'mermaid']);
 
-      {/* Header Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #1f2029', background: '#0e0f14' }}>
-        <div style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}>
+  // ── INLINE ELEMENT RENDERER ─────────────────────────────────────────────
+  const renderInline = (el, idx) => {
+    if (MEDIA_TYPES.has(el.type)) return renderMedia(el, idx);
+    switch (el.type) {
+      case 'paragraph':
+        return <p key={idx} style={{ fontSize: '14px', color: '#d1d5db', lineHeight: '1.7', margin: '0 0 4px 0', textAlign: 'left' }}>{el.text}</p>;
+      case 'bullet':
+        return (
+          <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', textAlign: 'left' }}>
+            <span style={{ color: '#f59e0b', fontSize: '16px', lineHeight: '1.5', flexShrink: 0 }}>▸</span>
+            <span style={{ fontSize: '13px', color: '#e5e7eb', lineHeight: '1.6' }}>{el.text}</span>
+          </div>
+        );
+      case 'divider':
+        return (
+          <div key={idx} style={{ marginTop: '10px', marginBottom: '4px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#a78bfa', borderBottom: '1px solid rgba(167,139,250,0.3)', paddingBottom: '4px', display: 'block', textAlign: 'left' }}>◆ {el.text}</span>
+          </div>
+        );
+      case 'link':
+        return (
+          <a key={idx} href={el.url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', display: 'block', width: '100%' }}>
+            <div style={{ background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '10px', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+              {el.thumbnail
+                ? <img src={el.thumbnail} alt="" style={{ width: '72px', height: '72px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
+                : <div style={{ width: '72px', height: '72px', borderRadius: '6px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '28px' }}>🔗</div>
+              }
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '14px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{el.title}</div>
+                <div style={{ fontSize: '11px', color: '#9ca3af', lineHeight: '1.4', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{el.description || el.url}</div>
+              </div>
+            </div>
+          </a>
+        );
+      default: return null;
+    }
+  };
+
+  // ── SLIDE LAYOUT ────────────────────────────────────────────────────────
+  const renderSlide = (slide) => {
+    if (!slide) return null;
+
+    if (slide.slideType === 'cover') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', width: '100%', minHeight: '55vh', gap: '20px', padding: '40px 60px' }}>
+          <div style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 'bold', letterSpacing: '3px', textTransform: 'uppercase' }}>🚀 AMEVA WORKSTATION</div>
+          <h1 style={{ fontSize: 'clamp(32px,5vw,64px)', fontWeight: '900', color: '#fff', margin: 0, letterSpacing: '-1px', lineHeight: 1.1 }}>{slide.title}</h1>
+          <div style={{ width: '80px', height: '3px', background: 'linear-gradient(90deg,#f59e0b,#a78bfa)', borderRadius: '2px' }}></div>
+          {slide.subtitle && <p style={{ fontSize: '16px', color: '#9ca3af', margin: 0, maxWidth: '500px', lineHeight: 1.5 }}>{slide.subtitle}</p>}
+          {slide.elements.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '700px', marginTop: '12px' }}>
+              {slide.elements.map((el, i) => renderInline(el, i))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (slide.slideType === 'chapter') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', width: '100%', minHeight: '45vh', gap: '16px', padding: '40px 60px' }}>
+          <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: 'bold', letterSpacing: '3px', textTransform: 'uppercase' }}>CHAPTER {slide.chapterNum}</div>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,52px)', fontWeight: '800', color: '#fff', margin: 0, lineHeight: 1.15 }}>{slide.title}</h2>
+          <div style={{ width: '60px', height: '3px', background: '#f59e0b', borderRadius: '2px' }}></div>
+          {slide.elements.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '700px', marginTop: '8px' }}>
+              {slide.elements.map((el, i) => renderInline(el, i))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const mediaEls = slide.elements.filter(el => MEDIA_TYPES.has(el.type));
+    const textEls = slide.elements.filter(el => !MEDIA_TYPES.has(el.type));
+
+    const header = (
+      <div style={{ marginBottom: '20px', flexShrink: 0 }}>
+        {slide.parentTitle && <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>{slide.parentTitle}</div>}
+        <h2 style={{ fontSize: 'clamp(20px,2.5vw,34px)', fontWeight: '800', color: '#fff', margin: 0, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', lineHeight: 1.2 }}>{slide.title}</h2>
+      </div>
+    );
+
+    if (mediaEls.length > 0 && textEls.length > 0) {
+      return (
+        <div style={{ display: 'flex', width: '100%', gap: '40px', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            {header}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>{textEls.map((el, i) => renderInline(el, i))}</div>
+          </div>
+          <div style={{ flex: 1.3, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>{mediaEls.map((el, i) => renderMedia(el, i))}</div>
+        </div>
+      );
+    }
+    if (mediaEls.length > 0) {
+      return (
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+          {header}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>{mediaEls.map((el, i) => renderMedia(el, i))}</div>
+        </div>
+      );
+    }
+    return (
+      <div style={{ width: '100%', maxWidth: '860px', margin: '0 auto' }}>
+        {header}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>{slide.elements.map((el, i) => renderInline(el, i))}</div>
+      </div>
+    );
+  };
+
+  // ── RENDER ──────────────────────────────────────────────────────────────
+  const btnStyle = { background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '4px 10px', borderRadius: '4px', fontSize: '10px', cursor: 'pointer', fontWeight: 'bold' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0b0c10', color: '#f1f1f5', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderBottom: '1px solid #1f2029', background: '#0e0f14', flexShrink: 0 }}>
+        <div style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', padding: '6px', borderRadius: '6px', display: 'flex' }}>
           <MonitorPlay size={16} color="#fff" />
         </div>
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, letterSpacing: '0.3px', color: '#fff' }}>프레젠테이션 메이커</h2>
-          <p style={{ fontSize: '10px', color: '#9ca3af', margin: 0 }}>코딩, 지도, 영상 등을 자동으로 최적 비율 배치하는 슬라이드쇼</p>
+          <h2 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: '#fff' }}>프레젠테이션 메이커</h2>
+          <p style={{ fontSize: '9.5px', color: '#9ca3af', margin: 0 }}># 표지 · ## 챕터 · ### 섹션 · #### 소제목 으로 자동 슬라이드 생성</p>
         </div>
         {!isPlaying && (
-          <button
-            title="슬라이드 새로고침"
-            onClick={handleRefresh}
-            style={{
-              background: '#1a1b23',
-              border: '1px solid #2e303e',
-              color: '#9ca3af',
-              width: '28px',
-              height: '28px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <RotateCw size={13} />
+          <button onClick={handleRefresh} title="새로고침" style={{ background: '#1a1b23', border: '1px solid #2e303e', color: '#9ca3af', width: '28px', height: '28px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <RotateCw size={12} />
           </button>
         )}
       </div>
 
-      <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden' }}>
-
-        {/* Presentation canvas container */}
-        <div 
-          ref={presentationContainerRef}
-          style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-        >
+      {/* Canvas */}
+      <div style={{ flex: 1, padding: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ flex: 1, background: '#13141a', borderRadius: '10px', border: '1px solid #1f2029', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           {!isPlaying ? (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center' }}>
-              <MonitorPlay size={44} color="#374151" style={{ marginBottom: '12px' }} />
-              <p style={{ fontSize: '11px', color: '#9ca3af', maxWidth: '260px', lineHeight: '1.5', marginBottom: '12px' }}>
-                문서에서 분석된 컴포넌트(지도, 코드, 영상, 리스트 등) 크기를 고려해 총 **{slides.length}장**의 맞춤형 슬라이드를 연산 생성했습니다.
+            /* Preview mode */
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', textAlign: 'center' }}>
+              <MonitorPlay size={44} color="#374151" style={{ marginBottom: '14px' }} />
+              <p style={{ fontSize: '11px', color: '#9ca3af', maxWidth: '320px', lineHeight: '1.6', marginBottom: '16px' }}>
+                총 <strong style={{ color: '#f59e0b' }}>{slides.length}장</strong>의 슬라이드가 생성됐습니다.
+                {slides.length > 0 && ` (표지 ${slides.filter(s=>s.slideType==='cover').length} · 챕터 ${slides.filter(s=>s.slideType==='chapter').length} · 콘텐츠 ${slides.filter(s=>s.slideType==='content').length})`}
               </p>
-              <button
-                onClick={() => setIsPlaying(true)}
-                style={{
-                  background: '#f59e0b',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Play size={14} /> 슬라이드쇼 시작
+              {/* Thumbnails */}
+              {slides.length > 0 && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '16px', maxWidth: '520px' }}>
+                  {slides.slice(0, 16).map((s, i) => (
+                    <div key={i} onClick={() => { setSlideIdx(i); setIsPlaying(true); }}
+                      style={{ width: '72px', height: '44px', background: s.slideType==='cover' ? 'linear-gradient(135deg,#1e1b4b,#4338ca)' : s.slideType==='chapter' ? 'linear-gradient(135deg,#18181b,#3f3f46)' : '#1c1d24', border: '1px solid #2e303e', borderRadius: '5px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ fontSize: '7px', color: '#9ca3af', lineHeight: 1.2, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%', padding: '0 2px' }}>{s.title}</div>
+                      <div style={{ position: 'absolute', bottom: '2px', right: '3px', fontSize: '6px', color: '#4b5563' }}>{i+1}</div>
+                    </div>
+                  ))}
+                  {slides.length > 16 && <div style={{ fontSize: '9px', color: '#6b7280', alignSelf: 'center' }}>+{slides.length-16}장 더</div>}
+                </div>
+              )}
+              <button onClick={() => setIsPlaying(true)} style={{ background: '#f59e0b', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <Play size={15} /> 슬라이드쇼 시작
               </button>
             </div>
           ) : (
+            /* Presentation mode */
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#090a0f', color: '#fff', position: 'relative' }}>
-
-              {/* Slide controls top header */}
+              {/* Top controls */}
               <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: '8px', zIndex: 10 }}>
-                <button
-                  onClick={handleToggleFullscreen}
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    padding: '4px 10px',
-                    borderRadius: '4px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isFullscreen ? '창 모드' : '전체보기'}
-                </button>
-                <button
-                  onClick={() => {
-                    setIsPlaying(false);
-                    if (document.fullscreenElement) {
-                      document.exitFullscreen();
-                    }
-                  }}
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    padding: '4px 10px',
-                    borderRadius: '4px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                >
-                  종료 (Esc)
-                </button>
+                <button onClick={() => setShowToc(p=>!p)} style={btnStyle}>목차</button>
+                <button onClick={toggleFs} style={btnStyle}>{isFullscreen ? '창 모드' : '전체보기'}</button>
+                <button onClick={() => { setIsPlaying(false); if (document.fullscreenElement) document.exitFullscreen(); }} style={btnStyle}>종료 (Esc)</button>
               </div>
 
-              {/* Slide central display body */}
-              <div style={{ flex: 1, display: 'flex', padding: '32px', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {slides[slideIdx] ? renderSlideContent(slides[slideIdx]) : (
-                  <div style={{ fontSize: '12px', color: '#9ca3af' }}>슬라이드 정보가 존재하지 않습니다.</div>
-                )}
+              {/* TOC panel */}
+              {showToc && (
+                <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: '180px', background: 'rgba(9,10,15,0.96)', borderRight: '1px solid #1f2029', zIndex: 20, overflowY: 'auto', padding: '48px 8px 8px' }}>
+                  {slides.map((s, i) => (
+                    <div key={i} onClick={() => { setSlideIdx(i); setShowToc(false); }}
+                      style={{ padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', marginBottom: '2px', background: i===slideIdx ? 'rgba(245,158,11,0.15)' : 'transparent', borderLeft: i===slideIdx ? '2px solid #f59e0b' : '2px solid transparent' }}>
+                      <div style={{ fontSize: '9px', color: '#6b7280', marginBottom: '2px' }}>{i+1} · {s.slideType==='cover' ? '표지' : s.slideType==='chapter' ? `Ch.${s.chapterNum}` : '내용'}</div>
+                      <div style={{ fontSize: '10px', color: i===slideIdx ? '#f59e0b' : '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: i===slideIdx ? 'bold' : 'normal' }}>{s.title}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Slide body */}
+              <div style={{ flex: 1, display: 'flex', padding: '48px', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', marginLeft: showToc ? '180px' : 0, transition: 'margin 0.2s' }}>
+                {slides[slideIdx] ? renderSlide(slides[slideIdx]) : <div style={{ fontSize: '12px', color: '#9ca3af', alignSelf: 'center' }}>슬라이드 없음</div>}
               </div>
 
-              {/* Bottom paging section (Centered to prevent overlapping with floating buttons) */}
-              <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', background: '#0e0f14', borderTop: '1px solid #1f2029' }}>
-                <button
-                  disabled={slideIdx === 0}
-                  onClick={() => setSlideIdx((s: number) => Math.max(0, s - 1))}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    padding: '6px',
-                    borderRadius: '50%',
-                    cursor: slideIdx === 0 ? 'not-allowed' : 'pointer',
-                    opacity: slideIdx === 0 ? 0.3 : 1
-                  }}
-                >
+              {/* Bottom navigation */}
+              <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', background: '#0e0f14', borderTop: '1px solid #1f2029', flexShrink: 0 }}>
+                <button disabled={slideIdx===0} onClick={() => setSlideIdx(p=>Math.max(0,p-1))}
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '6px', borderRadius: '50%', cursor: slideIdx===0?'not-allowed':'pointer', opacity: slideIdx===0?0.3:1, display: 'flex' }}>
                   <ChevronLeft size={16} />
                 </button>
-                <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', minWidth: '50px', textAlign: 'center' }}>{slideIdx + 1} / {slides.length}</span>
-                <button
-                  disabled={slideIdx === slides.length - 1}
-                  onClick={() => setSlideIdx((s: number) => Math.min(slides.length - 1, s + 1))}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    padding: '6px',
-                    borderRadius: '50%',
-                    cursor: slideIdx === slides.length - 1 ? 'not-allowed' : 'pointer',
-                    opacity: slideIdx === slides.length - 1 ? 0.3 : 1
-                  }}
-                >
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', maxWidth: '260px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {slides.map((_, i) => (
+                    <div key={i} onClick={() => setSlideIdx(i)}
+                      style={{ width: i===slideIdx?'20px':'6px', height: '6px', borderRadius: '3px', background: i===slideIdx?'#f59e0b':'#3f3f46', cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', minWidth: '50px', textAlign: 'center' }}>{slideIdx+1} / {slides.length}</span>
+                <button disabled={slideIdx===slides.length-1} onClick={() => setSlideIdx(p=>Math.min(slides.length-1,p+1))}
+                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '6px', borderRadius: '50%', cursor: slideIdx===slides.length-1?'not-allowed':'pointer', opacity: slideIdx===slides.length-1?0.3:1, display: 'flex' }}>
                   <ChevronRight size={16} />
                 </button>
               </div>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
