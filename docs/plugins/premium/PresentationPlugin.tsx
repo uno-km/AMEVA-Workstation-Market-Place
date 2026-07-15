@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MonitorPlay, Play, ChevronLeft, ChevronRight, Maximize2, RotateCw } from 'lucide-react';
 
 interface SlideElement {
@@ -215,12 +215,19 @@ export function PresentationPlugin() {
   };
 
   // Convert table cells into simple text array
-  const parseTableRows = (block: any): any[] => {
-    if (!block || !block.content) return [];
-    if (Array.isArray(block.content)) {
-      return block.content; // expected matrix structure [[cell1, cell2], ...]
-    }
-    return [];
+  const parseTableRows = (block: any): string[][] => {
+    if (!block) return [];
+    const rows = block.tableRows || [];
+    return rows.map((row: any) => {
+      const cells = Array.isArray(row.cells) ? row.cells : [];
+      return cells.map((cell: any) => {
+        if (typeof cell === 'string') return cell;
+        if (Array.isArray(cell)) {
+          return cell.map((c: any) => c?.text || '').join('');
+        }
+        return '';
+      });
+    });
   };
 
   // Build the intelligent, space-calculated, block-aware PPT slides
@@ -603,21 +610,28 @@ export function PresentationPlugin() {
           </div>
         );
       case 'table':
+        const rows = el.tableRows || [];
+        const headerRow = rows[0] || [];
+        const bodyRows = rows.slice(1);
         return (
-          <div style={{ width: '100%', overflowX: 'auto', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '8px', padding: '8px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', textAlign: 'left' }}>
+          <div style={{ width: '100%', overflowX: 'auto', background: '#1c1d24', border: '1px solid #2e303e', borderRadius: '8px', padding: '8px', boxSizing: 'border-box' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10.5px', textAlign: 'left' }}>
               <thead>
                 <tr>
-                  {el.tableRows?.[0] && Object.keys(el.tableRows[0]).map((key, i) => (
-                    <th key={i} style={{ borderBottom: '2px solid #2e303e', padding: '6px', color: '#f59e0b', fontWeight: 'bold' }}>{key}</th>
+                  {headerRow.map((cellText: string, i: number) => (
+                    <th key={i} style={{ borderBottom: '2px solid #2e303e', padding: '6px 8px', color: '#f59e0b', fontWeight: 'bold', background: '#13141a' }}>
+                      {cellText}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {el.tableRows?.map((row, idx) => (
-                  <tr key={idx}>
-                    {Object.values(row).map((val: any, cellIdx) => (
-                      <td key={cellIdx} style={{ borderBottom: '1px solid #2e303e', padding: '6px', color: '#d1d5db' }}>{String(val)}</td>
+                {bodyRows.map((rowCells: string[], idx: number) => (
+                  <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                    {rowCells.map((cellText: string, cellIdx: number) => (
+                      <td key={cellIdx} style={{ borderBottom: '1px solid #2e303e', padding: '6px 8px', color: '#d1d5db' }}>
+                        {cellText}
+                      </td>
                     ))}
                   </tr>
                 ))}
@@ -755,8 +769,8 @@ export function PresentationPlugin() {
                 )}
               </div>
 
-              {/* Bottom paging section */}
-              <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0e0f14', borderTop: '1px solid #1f2029' }}>
+              {/* Bottom paging section (Centered to prevent overlapping with floating buttons) */}
+              <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', background: '#0e0f14', borderTop: '1px solid #1f2029' }}>
                 <button
                   disabled={slideIdx === 0}
                   onClick={() => setSlideIdx((s: number) => Math.max(0, s - 1))}
@@ -772,7 +786,7 @@ export function PresentationPlugin() {
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold' }}>{slideIdx + 1} / {slides.length}</span>
+                <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', minWidth: '50px', textAlign: 'center' }}>{slideIdx + 1} / {slides.length}</span>
                 <button
                   disabled={slideIdx === slides.length - 1}
                   onClick={() => setSlideIdx((s: number) => Math.min(slides.length - 1, s + 1))}

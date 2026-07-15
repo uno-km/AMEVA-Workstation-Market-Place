@@ -2,7 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const yahooFinance = require('yahoo-finance2').default;
+const YahooFinance = require('yahoo-finance2').default;
+const yahooFinance = new YahooFinance();
 
 const app = express();
 const PORT = 3010;
@@ -180,50 +181,42 @@ app.get('/api/finance/data', async (req, res) => {
 // 2. 전 세계 모든 주식, ETF, 지수 검색용 프록시 API (한글-영어 자동 지능형 매핑 탐색기 이식)
 app.get('/api/finance/search', async (req, res) => {
   const query = req.query.q;
-  if (!query) {
-    return res.json({ success: true, quotes: [] });
-  }
+  if (!query) return res.json({ success: true, quotes: [] });
 
   const cleanQuery = query.trim().toLowerCase();
-  let matchedList = [];
+  if (cleanQuery.length === 0) return res.json({ success: true, quotes: [] });
 
-  // 1단계: 한글-티커 매핑 사전 1차 스캔 (오타나 부분 일치 포함)
-  KOREAN_STOCK_DICTIONARY.forEach(item => {
-    const isMatched = item.keywords.some(kw => kw.includes(cleanQuery) || cleanQuery.includes(kw));
-    if (isMatched) {
-      matchedList.push({
-        symbol: item.symbol,
-        name: item.name,
-        type: item.type,
-        exchange: item.exchange
-      });
-    }
-  });
+  // 관련성 점수: 2=완전일치, 1=앞부분일치, 0=포함
+  const getScore = (text, q) => {
+    if (!text) return -1;
+    const t = text.toLowerCase();
+    if (t === q) return 2;
+    if (t.startsWith(q)) return 1;
+    if (t.includes(q)) return 0;
+    return -1;
+  };
+
+  // 1단계: 로컬 사전 스캔 (관련성 점수 기반 정렬)
+  const localResults = KOREAN_STOCK_DICTIONARY.map(item => {
+    let score = -1;
+    item.keywords.forEach(kw => {
+      const s = getScore(kw, cleanQuery);
+      if (s > score) score = s;
+    });
+    const symScore = getScore(item.symbol, cleanQuery);
+    const nameScore = getScore(item.name, cleanQuery);
+    if (symScore > score) score = symScore;
+    if (nameScore > score) score = nameScore;
+    return { ...item, score };
+  }).filter(item => item.score >= 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ score, ...rest }) => rest);
 
   try {
-    // 2단계: 야후 파이낸스 실시간 영문/티커 API 동시 쿼리 조회 (yahoo-finance2 라이브러리 사용)
-    let apiQuery = query;
-    if (matchedList.length > 0) {
-      const engKw = KOREAN_STOCK_DICTIONARY.find(item => item.symbol === matchedList[0].symbol)?.keywords.find(kw => /^[a-zA-Z\s]+$/.test(kw));
-      if (engKw) apiQuery = engKw;
-    }
-
-    const searchResults = await yahooFinance.search(apiQuery);
-    if (searchResults && searchResults.quotes) {
-      const apiQuotes = searchResults.quotes
-        .filter(q => ['EQUITY', 'ETF', 'INDEX'].includes(q.quoteType))
-        .map(q => ({
-          symbol: q.symbol,
-          name: q.shortname || q.longname || q.symbol,
-          type: q.quoteType,
-          exchange: q.exchDisp || q.exchange
-        }));
-
-      // 중복 티커 배제하고 병합 (한글 매핑 사전에 들어있는 종목을 맨 앞에 우선 배치!)
-      const merged = [...matchedList];
-      apiQuotes.forEach(q => {
-        if (!merged.some(m => m.symbol === q.symbol)) {
-          merged.push(q);
+    // 2단계: Yahoo Finance API 병렬 검색 (항상 실행하여 더 넓은 결과 제공)
+    const apiResults = await yahooFinance.search(query);
+    const remoteResults = (apiResults.quotes || [])
+      .filter(q => ['EQUITY', 'ETF', 'INDEX'].includes(q.quoteType))
         }
       });
 

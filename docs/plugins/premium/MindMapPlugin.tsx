@@ -72,6 +72,10 @@ export function MindMapPlugin() {
   const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  const amevaCore = (window as any).AMEVA_CORE;
+  const useLLMInference = amevaCore?.useLLMInference;
+  const llm = useLLMInference ? useLLMInference() : null;
+
   // Map viewport pan state
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0 });
@@ -88,10 +92,12 @@ export function MindMapPlugin() {
   const handleListDragStart = (e: React.DragEvent, index: number) => {
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
   };
 
   const handleListDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleListDrop = (e: React.DragEvent, index: number) => {
@@ -105,11 +111,9 @@ export function MindMapPlugin() {
   };
 
   const handleAIExpandNode = async (nodeId: string, label: string, level: number) => {
-    const amevaCore = (window as any).AMEVA_CORE;
     if (!amevaCore || !amevaCore.editor) return;
     const editor = amevaCore.editor;
-    const useLLMInference = amevaCore.useLLMInference;
-    if (!useLLMInference) {
+    if (!llm || !llm.generate) {
       alert('AI 엔진을 사용할 수 없습니다.');
       return;
     }
@@ -118,8 +122,7 @@ export function MindMapPlugin() {
     try {
       const prompt = `마인드맵에서 '${label}' 주제(H${level} 레벨)를 확장하기 위해 브레인스토밍을 수행하고 있습니다. 이 주제의 하위 주제 또는 연관된 핵심 아이디어 3개를 리스트 형태로 추천해 주세요. 한국어로 답변해 주세요. 각 연관 아이디어는 한 줄짜리 명사형 문장으로 간결하게 답변해 주세요. 예시:\n1. 하위아이디어 A\n2. 하위아이디어 B\n3. 하위아이디어 C\n\n다른 설명이나 부가적인 말 없이 오직 숫자 번호와 아이디어 제목만 리스트 형태로 답변하세요.`;
       
-      const { generate } = useLLMInference();
-      const response = await generate(prompt, () => {}, 'You are a helpful mindmap brainstorming assistant.');
+      const response = await llm.generate(prompt, () => {}, 'You are a helpful mindmap brainstorming assistant.');
       
       const lines = response.split('\n').map(l => l.trim()).filter(l => /^\d+\./.test(l));
       let ideas = lines.map(l => l.replace(/^\d+\.\s*/, '').trim()).filter(Boolean).slice(0, 3);
@@ -251,62 +254,127 @@ export function MindMapPlugin() {
     }
 
     const h1s = headings.filter((h: any) => h.props?.level === 1);
-    const h2s = headings.filter((h: any) => h.props?.level === 2);
-    const h3s = headings.filter((h: any) => h.props?.level === 3);
+    
+    let rootNodeId = '';
+    let rootNodeLabel = '';
+    let isVirtualRoot = false;
+    let rootLvl = 1;
+
+    if (h1s.length === 1) {
+      rootNodeId = h1s[0].id;
+      rootNodeLabel = getBlockText(h1s[0]).slice(0, 18);
+      isVirtualRoot = false;
+      rootLvl = h1s[0].props?.level || 1;
+    } else if (h1s.length >= 2) {
+      rootNodeId = 'doc-virtual-root';
+      rootNodeLabel = '(문서)';
+      isVirtualRoot = true;
+      rootLvl = 0;
+    } else {
+      if (headings.length > 0) {
+        rootNodeId = headings[0].id;
+        rootNodeLabel = getBlockText(headings[0]).slice(0, 18);
+        isVirtualRoot = false;
+        rootLvl = headings[0].props?.level || 1;
+      } else {
+        return { newNodes: [], newEdges: [] };
+      }
+    }
 
     const newNodes: MindMapNode[] = [];
     const newEdges: MindMapEdge[] = [];
     
-    // SVG center point
     const centerX = 180;
     const centerY = 200;
 
-    let rootId = 'root';
-    let rootLabel = '문서 제목';
-    
-    if (h1s.length > 0) {
-      rootId = h1s[0].id;
-      rootLabel = getBlockText(h1s[0]).slice(0, 18);
-    } else if (headings.length > 0) {
-      rootId = headings[0].id;
-      rootLabel = getBlockText(headings[0]).slice(0, 18);
-    }
+    const rootCoords = getNodeCoordinates(rootNodeId, centerX, centerY);
+    newNodes.push({ 
+      id: rootNodeId, 
+      label: rootNodeLabel, 
+      x: rootCoords.x, 
+      y: rootCoords.y, 
+      depth: 0 
+    });
 
-    const rootCoords = getNodeCoordinates(rootId, centerX, centerY);
-    newNodes.push({ id: rootId, label: rootLabel, x: rootCoords.x, y: rootCoords.y, depth: 0 });
+    const activeParents: Record<number, string> = {
+      [rootLvl]: rootNodeId
+    };
 
-    const l1Headings = h1s.length > 0 ? h2s : headings.filter((h: any) => h.id !== rootId && h.props?.level === 2);
-    const l2Headings = h1s.length > 0 ? h3s : headings.filter((h: any) => h.id !== rootId && h.props?.level === 3);
+    const parentToChildren: Record<string, any[]> = {};
 
-    if (l1Headings.length > 0) {
-      l1Headings.forEach((h: any, idx: number) => {
-        const angle = (idx * 2 * Math.PI) / l1Headings.length;
-        const defaultX = centerX + 120 * Math.cos(angle);
-        const defaultY = centerY + 120 * Math.sin(angle);
-        const coords = getNodeCoordinates(h.id, defaultX, defaultY);
-        
-        newNodes.push({ id: h.id, label: getBlockText(h).slice(0, 15), x: coords.x, y: coords.y, depth: 1 });
-        newEdges.push({ source: rootId, target: h.id });
+    headings.forEach((h: any) => {
+      if (!isVirtualRoot && h.id === rootNodeId) return;
 
-        // Find H3 items under this H2
-        const currentIndex = headings.findIndex((x: any) => x.id === h.id);
-        const nextL1Index = headings.findIndex((x: any, i: number) => i > currentIndex && l1Headings.some((l: any) => l.id === x.id));
-        const limitIndex = nextL1Index !== -1 ? nextL1Index : headings.length;
-        
-        const subHeadings = headings.slice(currentIndex + 1, limitIndex).filter((x: any) => l2Headings.some((l: any) => l.id === x.id));
-
-        if (subHeadings.length > 0) {
-          subHeadings.forEach((sub: any, subIdx: number) => {
-            const spread = Math.PI / 2.5;
-            const subAngle = angle + (subIdx - (subHeadings.length - 1) / 2) * (spread / Math.max(1, subHeadings.length - 1));
-            const defaultSubX = coords.x + 80 * Math.cos(subAngle);
-            const defaultSubY = coords.y + 80 * Math.sin(subAngle);
-            const subCoords = getNodeCoordinates(sub.id, defaultSubX, defaultSubY);
-            
-            newNodes.push({ id: sub.id, label: getBlockText(sub).slice(0, 12), x: subCoords.x, y: subCoords.y, depth: 2 });
-            newEdges.push({ source: h.id, target: sub.id });
-          });
+      const level = h.props?.level || 1;
+      
+      let parentId = rootNodeId;
+      for (let lvl = level - 1; lvl >= 1; lvl--) {
+        if (activeParents[lvl]) {
+          parentId = activeParents[lvl];
+          break;
         }
+      }
+      
+      if (!parentToChildren[parentId]) {
+        parentToChildren[parentId] = [];
+      }
+      parentToChildren[parentId].push(h);
+      
+      activeParents[level] = h.id;
+      for (let lvl = level + 1; lvl <= 6; lvl++) {
+        delete activeParents[lvl];
+      }
+    });
+
+    const layoutQueue: Array<{ id: string; x: number; y: number; angle: number; depth: number }> = [
+      { id: rootNodeId, x: rootCoords.x, y: rootCoords.y, angle: 0, depth: 0 }
+    ];
+
+    while (layoutQueue.length > 0) {
+      const current = layoutQueue.shift()!;
+      const children = parentToChildren[current.id] || [];
+      if (children.length === 0) continue;
+
+      children.forEach((child, idx) => {
+        let childAngle = 0;
+        let distance = 80;
+
+        if (current.id === rootNodeId) {
+          childAngle = (idx * 2 * Math.PI) / children.length;
+          distance = 110;
+        } else {
+          const parentAngle = current.angle;
+          const spread = Math.PI / 2.5;
+          childAngle = children.length === 1 
+            ? parentAngle 
+            : parentAngle + (idx - (children.length - 1) / 2) * (spread / (children.length - 1));
+          distance = 80;
+        }
+
+        const defaultX = current.x + distance * Math.cos(childAngle);
+        const defaultY = current.y + distance * Math.sin(childAngle);
+        const coords = getNodeCoordinates(child.id, defaultX, defaultY);
+
+        newNodes.push({
+          id: child.id,
+          label: getBlockText(child).slice(0, 15),
+          x: coords.x,
+          y: coords.y,
+          depth: current.depth + 1
+        });
+
+        newEdges.push({
+          source: current.id,
+          target: child.id
+        });
+
+        layoutQueue.push({
+          id: child.id,
+          x: coords.x,
+          y: coords.y,
+          angle: childAngle,
+          depth: current.depth + 1
+        });
       });
     }
 
@@ -373,7 +441,7 @@ export function MindMapPlugin() {
   const handleNodeClick = (nodeId: string) => {
     if (draggedNodeId) return; // Ignore clicks during drag
     const amevaCore = (window as any).AMEVA_CORE;
-    if (amevaCore && amevaCore.editor && nodeId !== 'root') {
+    if (amevaCore && amevaCore.editor && nodeId !== 'root' && nodeId !== 'doc-virtual-root') {
       try {
         amevaCore.editor.setTextCursorPosition(nodeId, 'start');
         amevaCore.editor.focus();

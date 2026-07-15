@@ -137,6 +137,38 @@ const STOCK_MOCK_NEWS: Record<string, Array<{
       time: '2시간 전',
       summary: '음성, 비디오 실시간 인터랙션이 내장된 신규 API 엔드포인트를 글로벌 리전에 우선 배포하며 금융권 및 고객센터 자동화 솔루션 계약 수주를 대거 확보했습니다.'
     }
+  ],
+  '005930.KS': [
+    {
+      id: 'sec-1',
+      title: '삼성전자, 3분기 HBM3E 12단 주요 고객사 납품 본격화',
+      source: '디일렉',
+      time: '5분 전',
+      summary: '삼성전자가 5세대 고대역폭메모리(HBM)인 HBM3E 12단 제품의 엔비디아 등 주요 GPU 업체 신뢰성 테스트를 완료하고 본격적인 양산 납품에 돌입할 계획인 것으로 전해졌습니다.'
+    },
+    {
+      id: 'sec-2',
+      title: '파운드리 3나노 게이트올어라운드(GAA) 2세대 공정 수율 안정 궤도',
+      source: '전자신문',
+      time: '2시간 전',
+      summary: '세계 최초로 GAA 아키텍처를 도입한 삼성전자가 3나노 2세대 미세 공정의 수율을 60% 이상으로 끌어올리며 글로벌 팹리스 고객사 유치 경쟁력을 강화하고 있습니다.'
+    }
+  ],
+  '000660.KS': [
+    {
+      id: 'hynix-1',
+      title: 'SK하이닉스, HBM 시장 지배력 기반 2분기 사상 최대 영업이익 전망',
+      source: '조선비즈',
+      time: '12분 전',
+      summary: '독점 수준의 HBM3 및 HBM3E 공급 구도를 확립한 SK하이닉스가 서버용 고용량 eSSD 제품군의 동반 판매 호조로 2분기 5조 원을 상회하는 어닝 서프라이즈를 달성할 것으로 보입니다.'
+    },
+    {
+      id: 'hynix-2',
+      title: '차세대 HBM4 6세대 제품 개발 가속화... 세계 최초 패키징 혁신 예고',
+      source: '디지털데일리',
+      time: '3시간 전',
+      summary: 'SK하이닉스가 파운드리 파트너사인 TSMC와의 베이스 다이 생산 협력을 강화하여 차세대 HBM4 16단 제품의 연내 설계 완료 및 내년 양산 일정을 공식화했습니다.'
+    }
   ]
 };
 
@@ -315,11 +347,37 @@ const fmtVol = (n?: number) => !n ? '-' : n >= 1e9 ? (n/1e9).toFixed(1) + 'B' : 
        */
 const fmtCap = (n?: number) => !n ? '-' : n >= 1e12 ? '$' + (n/1e12).toFixed(2) + 'T' : n >= 1e9 ? '$' + (n/1e9).toFixed(1) + 'B' : '$' + (n/1e6).toFixed(0) + 'M';
 
+const KOREAN_STOCK_LABELS: Record<string, string> = {
+  '005930.KS': '삼성전자',
+  '000660.KS': 'SK하이닉스',
+  '066570.KS': 'LG전자',
+  '051910.KS': 'LG화학',
+  '373220.KS': 'LG에너지솔루션',
+  '005380.KS': '현대자동차',
+  '035420.KS': 'NAVER',
+  '035720.KS': '카카오',
+  '086520.KQ': '에코프로',
+  '247540.KQ': '에코프로비엠',
+  '068270.KS': '셀트리온',
+  '191170.KQ': '알테오젠',
+  '000270.KS': '기아',
+  '005490.KS': 'POSCO홀딩스',
+  '069500.KS': 'KODEX 200',
+  '360750.KS': 'TIGER 미국S&P500'
+};
+
 const getDisplayName = (q: StockQuote) => {
   if (INDEX_LABELS[q.symbol]) return INDEX_LABELS[q.symbol];
   if (FX_LABELS[q.symbol]) return FX_LABELS[q.symbol];
   if (q.symbol === '^TNX') return '미 10Y 국채 수익률';
-  return q.shortName || q.symbol;
+  
+  const symbolClean = q.symbol.replace(/^\^/, '');
+  if (KOREAN_STOCK_LABELS[q.symbol]) {
+    return `${KOREAN_STOCK_LABELS[q.symbol]} (${symbolClean})`;
+  }
+  
+  const name = q.shortName && q.shortName !== q.symbol ? q.shortName : symbolClean;
+  return `${name} (${symbolClean})`;
 };
 
 function Sparkline({ isUp }: { isUp: boolean }) {
@@ -447,24 +505,39 @@ function DetailPanel({ q, onClose }: { q: StockQuote; onClose: () => void }) {
        * - 함수 명: `handleInsert`
        * - 역할: 현재가, 고가, 거래량 등 시세 정보를 마크다운 표로 만들어 에디터에 삽입한다.
        */
+  const isIndex = q.type === 'INDEX' || q.symbol.startsWith('^');
+
   const handleInsert = () => {
     const now = new Date().toLocaleString('ko-KR');
-    const md = [
-      '### 📊 ' + getDisplayName(q) + ' 시세 스냅샷',
-      '> 기준: ' + now,
-      '',
-      '| 항목 | 값 |',
-      '|------|------|',
-      '| 현재가 | **' + fmt(q.regularMarketPrice) + ' ' + q.currency + '** |',
-      '| 등락 | ' + (isUp ? '▲' : '▼') + ' ' + fmt(Math.abs(q.regularMarketChange || 0)) + ' (' + (isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0) + '%) |',
-      '| 시가 | ' + fmt(q.regularMarketOpen) + ' |',
-      '| 고가 | ' + fmt(q.regularMarketDayHigh) + ' |',
-      '| 저가 | ' + fmt(q.regularMarketDayLow) + ' |',
-      '| 거래량 | ' + fmtVol(q.regularMarketVolume) + ' |',
-      '| 시가총액 | ' + fmtCap(q.marketCap) + ' |',
-      q.trailingPE ? '| PER | ' + fmt(q.trailingPE) + ' |' : null,
-      '| 52주 범위 | ' + fmt(q.fiftyTwoWeekLow) + ' ~ ' + fmt(q.fiftyTwoWeekHigh) + ' |',
-    ].filter(Boolean).join('\n');
+    let md = '';
+    if (isIndex) {
+      md = [
+        '### 📊 ' + getDisplayName(q) + ' 지수 스냅샷',
+        '> 기준: ' + now,
+        '',
+        '| 지수 지표 | 실시간 정보 |',
+        '|------|------|',
+        '| **현재 지수** | **' + fmt(q.regularMarketPrice) + ' ' + (q.currency || '') + '** |',
+        '| **등락폭** | ' + (isUp ? '▲' : '▼') + ' ' + fmt(Math.abs(q.regularMarketChange || 0)) + '포인트 (' + (isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0) + '%) |',
+      ].join('\n');
+    } else {
+      md = [
+        '### 📊 ' + getDisplayName(q) + ' 시세 스냅샷',
+        '> 기준: ' + now,
+        '',
+        '| 항목 | 값 |',
+        '|------|------|',
+        '| 현재가 | **' + fmt(q.regularMarketPrice) + ' ' + q.currency + '** |',
+        '| 등락 | ' + (isUp ? '▲' : '▼') + ' ' + fmt(Math.abs(q.regularMarketChange || 0)) + ' (' + (isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0) + '%) |',
+        '| 시가 | ' + fmt(q.regularMarketOpen) + ' |',
+        '| 고가 | ' + fmt(q.regularMarketDayHigh) + ' |',
+        '| 저가 | ' + fmt(q.regularMarketDayLow) + ' |',
+        '| 거래량 | ' + fmtVol(q.regularMarketVolume) + ' |',
+        '| 시가총액 | ' + fmtCap(q.marketCap) + ' |',
+        q.trailingPE ? '| PER | ' + fmt(q.trailingPE) + ' |' : null,
+        '| 52주 범위 | ' + fmt(q.fiftyTwoWeekLow) + ' ~ ' + fmt(q.fiftyTwoWeekHigh) + ' |',
+      ].filter(Boolean).join('\n');
+    }
     window.dispatchEvent(new CustomEvent('ameva:insert-text', { detail: md }));
   };
 
@@ -521,15 +594,32 @@ function DetailPanel({ q, onClose }: { q: StockQuote; onClose: () => void }) {
         </button>
       </div>
       
-      {/* 상세 수치 그리드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 12px', marginBottom: '10px' }}>
-        {rows.map(([label, value]) => (
-          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-            <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-            <span style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{value}</span>
+      {isIndex ? (
+        <div style={{ padding: '8px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px', textAlign: 'left' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>현재 지수</span>
+            <span style={{ fontWeight: 'bold', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{fmt(q.regularMarketPrice)} {q.currency || ''}</span>
           </div>
-        ))}
-      </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>전일 대비 등락폭</span>
+            <span style={{ fontWeight: 'bold', color: isUp ? '#34d399' : '#ef4444', fontFamily: 'var(--font-mono)' }}>{isUp ? '▲' : '▼'} {fmt(Math.abs(q.regularMarketChange || 0))} 포인트</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+            <span style={{ color: 'var(--text-muted)' }}>등락율</span>
+            <span style={{ fontWeight: 'bold', color: isUp ? '#34d399' : '#ef4444', fontFamily: 'var(--font-mono)' }}>{(isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0)}%</span>
+          </div>
+        </div>
+      ) : (
+        /* 상세 수치 그리드 */
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 12px', marginBottom: '10px' }}>
+          {rows.map(([label, value]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+              <span style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 시세 표 삽입 버튼 */}
       <button
@@ -603,6 +693,7 @@ export function FinanceDashboardView() {
   const [lastUpdated, setLastUpdated] = useState('');
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
   const [searchDetailStock, setSearchDetailStock] = useState<StockQuote | null>(null);
+  const [isSearchDetailExpanded, setIsSearchDetailExpanded] = useState(false);
 
   // 실시간 한글/영어 종목 검색 디바운스 이펙트
   useEffect(() => {
@@ -633,6 +724,7 @@ export function FinanceDashboardView() {
   const handleSelectSearched = async (symbolToAdd: string) => {
     setSearchQuery('');
     setSearchResults([]);
+    setIsSearchDetailExpanded(false);
     try {
       const quotes = await fetchQuotesBatch([symbolToAdd]);
       if (quotes.length > 0) {
@@ -850,68 +942,114 @@ export function FinanceDashboardView() {
             const inWatchlist = symbols.includes(q.symbol);
             const displayName = getDisplayName(q);
             return (
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
-                  padding: '10px 12px', 
-                  borderRadius: '8px', 
-                  background: 'var(--bg-glass, rgba(15, 15, 20, 0.4))', 
-                  border: '1px solid ' + (isUp ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'),
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  position: 'relative'
-                }}
-              >
-                <button 
-                  onClick={() => setSearchDetailStock(null)} 
-                  style={{ position: 'absolute', top: '6px', right: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'flex' }}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    padding: '10px 12px', 
+                    borderRadius: '8px', 
+                    background: 'var(--bg-glass, rgba(15, 15, 20, 0.4))', 
+                    border: '1px solid ' + (isUp ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'),
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    position: 'relative'
+                  }}
                 >
-                  <X size={10} />
-                </button>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 2, textAlign: 'left' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
-                    {displayName && displayName !== q.symbol ? `${displayName} (${q.symbol.replace(/^\^/, '')})` : q.symbol.replace(/^\^/, '')}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
-                      {fmt(q.regularMarketPrice)} <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>{q.currency || ''}</span>
+                  <button 
+                    onClick={() => {
+                      setSearchDetailStock(null);
+                      setIsSearchDetailExpanded(false);
+                    }} 
+                    style={{ position: 'absolute', top: '6px', right: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', display: 'flex' }}
+                  >
+                    <X size={10} />
+                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 2, textAlign: 'left' }}>
+                    <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
+                      {displayName}
                     </span>
-                    <span style={{ fontSize: '8.5px', fontWeight: 600, color: isUp ? '#34d399' : '#ef4444', fontFamily: 'var(--font-mono)' }}>
-                      {isUp ? '▲' : '▼'} {fmt(Math.abs(q.regularMarketChange || 0))} ({(isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0)}%)
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
+                        {fmt(q.regularMarketPrice)} <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>{q.currency || ''}</span>
+                      </span>
+                      <span style={{ fontSize: '8.5px', fontWeight: 600, color: isUp ? '#34d399' : '#ef4444', fontFamily: 'var(--font-mono)' }}>
+                        {isUp ? '▲' : '▼'} {fmt(Math.abs(q.regularMarketChange || 0))} ({(isUp ? '+' : '') + fmt(q.regularMarketChangePercent || 0)}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 미니 스파크라인 차트 */}
+                  <div style={{ flex: 1.5, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 8px' }}>
+                    <Sparkline isUp={isUp} />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0, marginLeft: '6px' }}>
+                    <button 
+                      onClick={() => handleInsertDirect(q)}
+                      style={{ 
+                        padding: '5px 8px', 
+                        borderRadius: '5px', 
+                        cursor: 'pointer',
+                        background: 'rgba(139,92,246,0.12)', 
+                        border: '1px solid rgba(139,92,246,0.3)',
+                        color: '#a78bfa', 
+                        fontSize: '9.5px', 
+                        fontWeight: 700,
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.22)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(139,92,246,0.12)'}
+                    >
+                      본문에 넣기
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsSearchDetailExpanded(prev => !prev);
+                      }}
+                      style={{ 
+                        padding: '5px 8px', 
+                        borderRadius: '5px', 
+                        cursor: 'pointer',
+                        background: isSearchDetailExpanded ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.12)', 
+                        border: '1px solid rgba(245,158,11,0.3)',
+                        color: '#f59e0b', 
+                        fontSize: '9.5px', 
+                        fontWeight: 700,
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,158,11,0.22)'}
+                      onMouseLeave={e => !isSearchDetailExpanded && (e.currentTarget.style.background = 'rgba(245,158,11,0.12)')}
+                    >
+                      {isSearchDetailExpanded ? '뉴스 닫기' : '뉴스 보기'}
+                    </button>
+                    <button 
+                      onClick={() => handleAddWatchlist(q.symbol)}
+                      disabled={inWatchlist}
+                      style={{ 
+                        padding: '5px 8px', 
+                        borderRadius: '5px', 
+                        cursor: inWatchlist ? 'default' : 'pointer', 
+                        background: inWatchlist ? 'rgba(255,255,255,0.04)' : 'rgba(52,211,153,0.12)', 
+                        border: '1px solid ' + (inWatchlist ? 'rgba(255,255,255,0.08)' : 'rgba(52,211,153,0.3)'), 
+                        color: inWatchlist ? 'var(--text-muted)' : '#34d399', 
+                        fontSize: '9.5px', 
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => !inWatchlist && (e.currentTarget.style.background = 'rgba(52,211,153,0.22)')}
+                      onMouseLeave={e => !inWatchlist && (e.currentTarget.style.background = 'rgba(52,211,153,0.12)')}
+                    >
+                      {inWatchlist ? '✓ 추가됨' : '+ 관심종목'}
+                    </button>
                   </div>
                 </div>
-
-                {/* 미니 스파크라인 차트 */}
-                <div style={{ flex: 1.5, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 8px' }}>
-                  <Sparkline isUp={isUp} />
-                </div>
-
-                <div style={{ flexShrink: 0, marginLeft: '6px' }}>
-                  <button 
-                    onClick={() => handleAddWatchlist(q.symbol)}
-                    disabled={inWatchlist}
-                    style={{ 
-                      padding: '5px 8px', 
-                      borderRadius: '5px', 
-                      cursor: inWatchlist ? 'default' : 'pointer', 
-                      background: inWatchlist ? 'rgba(255,255,255,0.04)' : 'rgba(52,211,153,0.12)', 
-                      border: '1px solid ' + (inWatchlist ? 'rgba(255,255,255,0.08)' : 'rgba(52,211,153,0.3)'), 
-                      color: inWatchlist ? 'var(--text-muted)' : '#34d399', 
-                      fontSize: '9.5px', 
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.15s'
-                    }}
-                    onMouseEnter={e => !inWatchlist && (e.currentTarget.style.background = 'rgba(52,211,153,0.22)')}
-                    onMouseLeave={e => !inWatchlist && (e.currentTarget.style.background = 'rgba(52,211,153,0.12)')}
-                  >
-                    {inWatchlist ? '✓ 추가됨' : '+ 관심종목 추가'}
-                  </button>
-                </div>
+                {isSearchDetailExpanded && (
+                  <DetailPanel q={q} onClose={() => setIsSearchDetailExpanded(false)} />
+                )}
               </div>
             );
           })()}
@@ -999,9 +1137,7 @@ export function FinanceDashboardView() {
           {stockQ.map(q => {
             const isUp = q.regularMarketChangePercent >= 0;
             const isExpanded = expandedSymbol === q.symbol;
-            const itemLabel = q.shortName && q.shortName !== q.symbol 
-              ? `${q.shortName} (${q.symbol.replace(/^\^/, '')})` 
-              : q.symbol.replace(/^\^/, '');
+            const itemLabel = getDisplayName(q);
             return (
               <div key={q.symbol}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
