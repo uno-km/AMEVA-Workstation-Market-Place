@@ -8,10 +8,103 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-  </script>
+  <style>
+    .arch-diagram {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      margin: 2rem 0;
+      font-family: 'Outfit', sans-serif;
+    }
+    .arch-layers {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .arch-layer {
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      position: relative;
+    }
+    .arch-layer-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      opacity: 0.75;
+    }
+    .arch-layer-nodes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      align-items: center;
+    }
+    .arch-node {
+      border-radius: 8px;
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .arch-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin: 0;
+    }
+    .arch-arrow-line {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .arch-arrow-line span {
+      font-size: 0.65rem;
+      color: #64748b;
+      letter-spacing: 0.05em;
+    }
+    .arch-arrow-line svg {
+      display: block;
+    }
+    /* Layer colors */
+    .layer-local { background: rgba(59,130,246,0.08); border: 1.5px solid rgba(59,130,246,0.3); }
+    .layer-local .arch-layer-label { color: #3b82f6; }
+    .layer-network { background: rgba(168,85,247,0.08); border: 1.5px solid rgba(168,85,247,0.3); }
+    .layer-network .arch-layer-label { color: #a855f7; }
+    .layer-storage { background: rgba(34,197,94,0.08); border: 1.5px solid rgba(34,197,94,0.3); }
+    .layer-storage .arch-layer-label { color: #22c55e; }
+    /* Node colors */
+    .node-core { background: rgba(59,130,246,0.2); border-color: #3b82f6; color: #93c5fd; }
+    .node-plugin { background: rgba(99,102,241,0.2); border-color: #6366f1; color: #a5b4fc; }
+    .node-keychain { background: rgba(239,68,68,0.15); border-color: #ef4444; color: #fca5a5; }
+    .node-yjs { background: rgba(168,85,247,0.2); border-color: #a855f7; color: #d8b4fe; }
+    .node-db { background: rgba(100,116,139,0.2); border-color: #64748b; color: #94a3b8; }
+    .node-signal { background: rgba(168,85,247,0.2); border-color: #a855f7; color: #d8b4fe; }
+    .node-gateway { background: rgba(99,102,241,0.2); border-color: #6366f1; color: #a5b4fc; }
+    .node-pg { background: rgba(34,197,94,0.2); border-color: #22c55e; color: #86efac; }
+    .node-redis { background: rgba(249,115,22,0.2); border-color: #f97316; color: #fdba74; }
+    .arch-connector {
+      display: flex;
+      justify-content: space-around;
+      padding: 0.3rem 1.5rem;
+    }
+    .arch-connector-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .arch-connector-label {
+      font-size: 0.6rem;
+      color: #64748b;
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+  </style>
   <style>
     :root {
       --bg-color: #0b0f19;
@@ -125,28 +218,66 @@
       <h2>1. Architectural Paradigm: Local-First Cloud Streaming</h2>
       <p>AMEVA Workstation은 전통적인 데스크톱 애플리케이션의 리소스 제약(Monolithic Resource Hogging)과 웹 애플리케이션의 오프라인 취약성(Network Dependency)을 동시에 해결하기 위해 <strong>Local-First Cloud Streaming Architecture</strong>를 채택했습니다. 이는 브라우저의 샌드박스 렌더링 엔진(V8 & Blink)을 호스트 OS의 네이티브 리소스와 브릿징하는 하이브리드 접근 방식입니다.</p>
       
-      <div class="mermaid">
-      flowchart TD
-        subgraph localLayer ["Local Client Layer (Browser Context)"]
-          A[AMEVA Core Runtime] -->|Sandboxed Iframe API| B(Plugin Host Container)
-          A -->|IPC Bridge| C(OS Keychain API integration)
-          A -->|CRDT State Management| D(Yjs Sync Engine)
-          A -->|Local Persistence| I[(IndexedDB / OPFS)]
-        end
-        
-        subgraph networkLayer ["Transport & Network Layer"]
-          D -->|WebRTC Mesh Network| E[Signaling Server (Socket.io)]
-          B -->|RESTful / GraphQL API| F[Cloud Application Gateway]
-        end
-        
-        subgraph storageLayer ["Cloud Infrastructure Layer"]
-          F --> G[(PostgreSQL - Metadata)]
-          F --> H[(Redis - Session Cache)]
-        end
-        
-        style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px
-        style D fill:#1e293b,stroke:#a855f7,stroke-width:2px
-        style C fill:#475569,stroke:#ef4444,stroke-width:2px
+      <div class="arch-diagram">
+        <div class="arch-layers">
+
+          <!-- Layer 1: Local Client -->
+          <div class="arch-layer layer-local">
+            <div class="arch-layer-label">🖥️ Local Client Layer (Browser Context)</div>
+            <div class="arch-layer-nodes">
+              <div class="arch-node node-core">⚡ AMEVA Core Runtime</div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-plugin">🧩 Plugin Host Container<br><small style="opacity:.6;font-weight:400">Sandboxed Iframe API</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-keychain">🔐 OS Keychain API<br><small style="opacity:.6;font-weight:400">IPC Bridge</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-yjs">🔄 Yjs Sync Engine<br><small style="opacity:.6;font-weight:400">CRDT State Mgmt</small></div>
+              <svg width="22" height="16" viewBox="0 0 22 16"><path d="M2 8h16M14 3l6 5-6 5" stroke="#3b82f6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-db">🗄️ IndexedDB / OPFS<br><small style="opacity:.6;font-weight:400">Local Persistence</small></div>
+            </div>
+          </div>
+
+          <!-- Connector arrows -->
+          <div class="arch-connector">
+            <div class="arch-connector-item">
+              <svg width="18" height="24" viewBox="0 0 18 24"><path d="M9 2v18M4 15l5 6 5-6" stroke="#a855f7" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-connector-label">WebRTC<br>Mesh P2P</div>
+            </div>
+            <div class="arch-connector-item">
+              <svg width="18" height="24" viewBox="0 0 18 24"><path d="M9 2v18M4 15l5 6 5-6" stroke="#6366f1" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-connector-label">RESTful /<br>GraphQL API</div>
+            </div>
+          </div>
+
+          <!-- Layer 2: Network -->
+          <div class="arch-layer layer-network">
+            <div class="arch-layer-label">🌐 Transport & Network Layer</div>
+            <div class="arch-layer-nodes">
+              <div class="arch-node node-signal">📡 Signaling Server<br><small style="opacity:.6;font-weight:400">Socket.io / WebRTC</small></div>
+              <svg width="50" height="16" viewBox="0 0 50 16"><path d="M2 8h44M38 3l8 5-8 5" stroke="#a855f7" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-node node-gateway">🚪 Cloud App Gateway<br><small style="opacity:.6;font-weight:400">Load Balancer / Auth</small></div>
+            </div>
+          </div>
+
+          <!-- Connector arrow -->
+          <div class="arch-connector">
+            <div class="arch-connector-item">
+              <svg width="18" height="24" viewBox="0 0 18 24"><path d="M9 2v18M4 15l5 6 5-6" stroke="#22c55e" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
+              <div class="arch-connector-label">Persistent<br>Storage I/O</div>
+            </div>
+          </div>
+
+          <!-- Layer 3: Storage -->
+          <div class="arch-layer layer-storage">
+            <div class="arch-layer-label">☁️ Cloud Infrastructure Layer</div>
+            <div class="arch-layer-nodes">
+              <div class="arch-node node-pg">🐘 PostgreSQL<br><small style="opacity:.6;font-weight:400">Metadata & Docs</small></div>
+              <svg width="30" height="16" viewBox="0 0 30 16"><line x1="2" y1="8" x2="28" y2="8" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3"/></svg>
+              <div class="arch-node node-redis">⚡ Redis<br><small style="opacity:.6;font-weight:400">Session Cache</small></div>
+            </div>
+          </div>
+
+        </div>
       </div>
       <p>특히 보안 아키텍처에 있어 <strong>Zero-Trust 기반의 자격 증명 격리(Credential Isolation)</strong>를 구현했습니다. 민감한 API Token 및 OAuth 인증 정보는 클라우드 서버나 브라우저의 로컬 스토리지에 평문으로 저장되지 않으며, 호스트 OS의 Native Keychain API(Windows Credential Manager / macOS Keychain)를 통해 AES-256 규격으로 물리적 암호화되어 관리됩니다.</p>
     </div>
