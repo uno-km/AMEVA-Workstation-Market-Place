@@ -1,6 +1,12 @@
+import React, { useRef, useState, useEffect } from 'react'
+import { ArrowLeft, ArrowRight, RotateCw, Home, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
+
+export default function AmevaBrowserView() {
+  const [url, setUrl] = useState('https://google.com')
+  const [inputUrl, setInputUrl] = useState('https://google.com')
   const webviewRef = useRef<any>(null)
 
-  // [FEAT-FIND-IN-PAGE] ?�이지 ???�어 찾기 ?�태 변?�들
+  // [FEAT-FIND-IN-PAGE] 페이지 내 단어 찾기 상태 변수들
   const [showFind, setShowFind] = useState(false)
   const [findText, setFindText] = useState('')
   const [currentMatch, setCurrentMatch] = useState(0)
@@ -117,7 +123,7 @@
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-main)' }}>
-      {/* 브라?��? ?�단 ?�어 �?*/}
+      {/* 브라우저 상단 제어 바 */}
       <div 
         style={{
           display: 'flex',
@@ -178,14 +184,14 @@
           <Home size={13} />
         </button>
 
-        {/* 주소�?*/}
+        {/* 주소창 */}
         <form onSubmit={handleNavigate} style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
             <input 
               type="text"
               value={inputUrl}
               onChange={e => setInputUrl(e.target.value)}
-              placeholder="URL???�력?�거??검?�어�??�력?�세??.."
+              placeholder="URL을 입력하거나 검색어를 입력하세요..."
               style={{
                 width: '100%',
                 padding: '4px 28px 4px 8px',
@@ -212,8 +218,81 @@
         </form>
 
         <button
-          onClick={() => {
-            alert('?�재 ???�이지 ?�용??마크?�운?�로 ?�크?�되???�디?�에 ?�입?�었?�니?? (RPA 추출 ?�료)');
+          onClick={async () => {
+            /*
+             * [CONTRACT]
+             * - webviewRef.current가 유효한 경우에만 스크랩 태스크를 기동한다.
+             */
+            if (!webviewRef.current) return
+            try {
+              /*
+               * [RUN-TIME STATE / INVARIANT]
+               * - 변수 명: `result`
+               * - 자료형 / 예상 값: string (마크다운 포맷 텍스트)
+               * - 시나리오: 일렉트론 웹뷰 인스턴스에 강제로 JavaScript를 주입(executeJavaScript)하여
+               *   문서 제목, URL 및 본문의 구조적 요소(h1~h6, p, li, pre)를 수집하여 마크다운 형태로 통합 추출한다.
+               */
+              const result = await webviewRef.current.executeJavaScript(`
+                (() => {
+                  const title = document.title || '스크랩한 페이지';
+                  const url = window.location.href;
+                  
+                  let markdown = '# ' + title + '\\n\\n';
+                  markdown += '*출처: [' + url + '](' + url + ')*\\n\\n';
+                  
+                  const elements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, pre');
+                  let blockCount = 0;
+                  
+                  elements.forEach(el => {
+                    const parent = el.parentElement;
+                    if (parent) {
+                      const skipRoles = ['navigation', 'banner', 'contentinfo'];
+                      const parentRole = parent.getAttribute('role');
+                      if (skipRoles.includes(parentRole || '')) return;
+                      
+                      const skipTags = ['nav', 'header', 'footer', 'aside'];
+                      if (skipTags.includes(parent.tagName.toLowerCase())) return;
+                    }
+                    
+                    const tag = el.tagName.toLowerCase();
+                    const text = el.innerText.trim();
+                    if (!text) return;
+                    
+                    blockCount++;
+                    if (tag.startsWith('h')) {
+                      const level = parseInt(tag[1], 10);
+                      markdown += '#'.repeat(level) + ' ' + text + '\\n\\n';
+                    } else if (tag === 'p') {
+                      markdown += text + '\\n\\n';
+                    } else if (tag === 'li') {
+                      markdown += '* ' + text + '\\n';
+                    } else if (tag === 'pre') {
+                      markdown += '\\`\\`\\`\\n' + text + '\\n\\`\\`\\`\\n\\n';
+                    }
+                  });
+                  
+                  if (blockCount === 0) {
+                    markdown += document.body.innerText.trim().slice(0, 1000) + '...\\n';
+                  }
+                  
+                  return markdown;
+                })()
+              `);
+              
+              /*
+               * [ALGORITHM BRANCH / DECISION]
+               * - 조건 식: 수집된 마크다운 결과가 존재하면 전역 창에 app:insert-markdown 이벤트를 브로드캐스트하여 에디터 삽입을 연동한다.
+               */
+              if (result) {
+                window.dispatchEvent(new CustomEvent('app:insert-markdown', {
+                  detail: { markdownText: result }
+                }));
+                alert('현재 웹 페이지 내용이 마크다운으로 스크랩되어 에디터에 삽입되었습니다. (RPA 추출 완료)');
+              }
+            } catch (err: any) {
+              console.error('RPA 스크랩 실패:', err);
+              alert('웹 페이지 내용을 스크랩하는데 실패했습니다: ' + String(err));
+            }
           }}
           style={{
             background: 'var(--primary-glow, rgba(99, 102, 241, 0.2))', 
@@ -222,11 +301,12 @@
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 8px', height: '24px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap'
           }}
-          title="RPA 마크?�운 ?�크??
+          title="RPA 마크다운 스크랩"
         >
-          마크?�운 ?�크??        </button>
+          마크다운 스크랩
+        </button>
 
-        {/* [FEAT] ?�이지 ??찾기 ?��? 버튼 */}
+        {/* [FEAT] 페이지 내 찾기 토글 버튼 */}
         <button 
           onClick={() => {
             if (showFind) {
@@ -238,19 +318,19 @@
           style={{
             background: showFind ? 'var(--primary-glow, rgba(99, 102, 241, 0.2))' : 'transparent', 
             border: 'none', 
-            color: showFind ? 'var(--primary, #6366f1)' : 'var(--text-muted)',
+            color: showFind ? 'var(--primary, #6366f1)',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: '24px', height: '24px', borderRadius: '4px'
           }}
           onMouseEnter={e => !showFind && (e.currentTarget.style.background = 'var(--bg-glass-active)')}
           onMouseLeave={e => !showFind && (e.currentTarget.style.background = 'transparent')}
-          title="?�이지 ???�어 찾기"
+          title="페이지 내 단어 찾기"
         >
           <Search size={12} />
         </button>
       </div>
 
-      {/* [FEAT] ?�이지 ??찾기 미니 ?�널 */}
+      {/* [FEAT] 페이지 내 찾기 미니 패널 */}
       {showFind && (
         <div 
           style={{
@@ -264,13 +344,13 @@
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>?�이지 검??</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>페이지 검색</span>
           <input 
             type="text"
             value={findText}
             onChange={handleFindInput}
             onKeyDown={handleFindKeyDown}
-            placeholder="찾을 ?�어�??�력?�고 Enter..."
+            placeholder="찾을 단어를 입력하고 Enter..."
             autoFocus
             style={{
               flex: 1,
@@ -297,7 +377,7 @@
             }}
             onMouseEnter={e => findText && (e.currentTarget.style.background = 'var(--bg-glass-active)')}
             onMouseLeave={e => findText && (e.currentTarget.style.background = 'transparent')}
-            title="?�전 찾기 (Shift+Enter)"
+            title="이전 찾기 (Shift+Enter)"
           >
             <ChevronUp size={13} />
           </button>
@@ -311,7 +391,7 @@
             }}
             onMouseEnter={e => findText && (e.currentTarget.style.background = 'var(--bg-glass-active)')}
             onMouseLeave={e => findText && (e.currentTarget.style.background = 'transparent')}
-            title="?�음 찾기 (Enter)"
+            title="다음 찾기 (Enter)"
           >
             <ChevronDown size={13} />
           </button>
@@ -324,14 +404,14 @@
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-glass-active)'}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            title="?�기 (Esc)"
+            title="닫기 (Esc)"
           >
             <X size={12} />
           </button>
         </div>
       )}
 
-      {/* ?�장 ?�뷰 */}
+      {/* 내장 웹뷰 */}
       <webview 
         ref={webviewRef}
         src={url} 
@@ -341,4 +421,3 @@
     </div>
   )
 }
-
