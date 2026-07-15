@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     previewIframe.src = url;
     previewTitle.textContent = name;
-    previewDesc.textContent = description;
+    previewDesc.innerHTML = description;
     
     // Update active style on cards
     document.querySelectorAll('.plugin-card').forEach(c => c.classList.remove('active'));
@@ -163,4 +163,35 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     renderPlugins(filtered);
   });
+
+  // About Modal Logic
+  const aboutBtn = document.getElementById('aboutBtn');
+  const aboutModal = document.getElementById('aboutModal');
+  const closeAboutBtn = document.getElementById('closeAboutBtn');
+
+  if (aboutBtn && aboutModal && closeAboutBtn) {
+    aboutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      aboutModal.style.display = 'flex';
+      setTimeout(() => {
+        aboutModal.classList.add('visible');
+      }, 10);
+    });
+
+    closeAboutBtn.addEventListener('click', () => {
+      aboutModal.classList.remove('visible');
+      setTimeout(() => {
+        aboutModal.style.display = 'none';
+      }, 300);
+    });
+
+    aboutModal.addEventListener('click', (e) => {
+      if (e.target === aboutModal) {
+        aboutModal.classList.remove('visible');
+        setTimeout(() => {
+          aboutModal.style.display = 'none';
+        }, 300);
+      }
+    });
+  }
 });

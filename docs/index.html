@@ -23,11 +23,40 @@
         <span class="logo-icon">🌟</span>
         <h1>AMEVA <span>Marketplace</span></h1>
       </div>
+      <div class="nav-links">
+        <a href="#" class="nav-item active" onclick="location.reload()">Home</a>
+        <a href="https://uno-km.github.io/AMEVA-Workstation/" class="nav-item" target="_blank">AMEVA Workstation</a>
+        <a href="tech-report.html" class="nav-item target-report" target="_blank">Tech Architecture</a>
+        <a href="#" class="nav-item" id="aboutBtn">About</a>
+        <a href="mailto:zhfldk014745@naver.com" class="nav-item contact-btn">Contact Us</a>
+      </div>
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="플러그인 검색...">
       </div>
     </div>
   </nav>
+
+  <!-- About Modal -->
+  <div id="aboutModal" class="modal-overlay">
+    <div class="modal-content about-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">About AMEVA Marketplace</h2>
+        <button class="close-modal" id="closeAboutBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="about-lead">AMEVA Marketplace는 전문가와 기업을 위한 궁극의 플러그인 생태계입니다.</p>
+        <p>기존 데스크톱 앱들의 한계를 뛰어넘어, 무거운 설치 과정 없이 클라우드 스트리밍 방식으로 필요한 순간에 즉시 앱을 활성화합니다. Yjs 기반의 실시간 협업, WebRTC를 통한 제로 레이턴시 통신, 그리고 OS Keychain 수준의 강력한 자격 증명 관리를 결합하여 가장 안전하고 효율적인 작업 환경을 제공합니다.</p>
+        <ul class="about-features">
+          <li>🚀 <strong>Zero Install:</strong> 클라우드 스트리밍을 통한 즉각적인 렌더링</li>
+          <li>🔐 <strong>Enterprise Security:</strong> OS Keychain 기반 물리적 암호화 격리</li>
+          <li>⚡ <strong>Real-time Sync:</strong> Yjs 기반 충돌 없는 문서 공동 편집</li>
+        </ul>
+        <div style="margin-top:24px; text-align:center;">
+          <a href="tech-report.html" target="_blank" class="view-tech-btn">기술 논문(Architecture) 보기</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="layout-container" id="layoutContainer">
     <main class="plugin-list">

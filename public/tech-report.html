@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMEVA Tech Architecture Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(20, 25, 40, 0.8);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --accent: #a855f7;
+    }
+    body {
+      font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+    .header h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .header p {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+    }
+    .section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 3rem;
+      margin-bottom: 3rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .section h2 {
+      font-size: 2rem;
+      border-bottom: 2px solid var(--card-border);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+      color: #fff;
+    }
+    .section h3 {
+      font-size: 1.4rem;
+      color: var(--primary);
+      margin-top: 2rem;
+    }
+    p {
+      color: #cbd5e1;
+      font-size: 1.05rem;
+    }
+    .mermaid {
+      background: rgba(0,0,0,0.3);
+      padding: 2rem;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      margin: 2rem 0;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th {
+      background: rgba(255,255,255,0.05);
+      font-weight: 600;
+      color: var(--accent);
+    }
+    tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 2rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">← 마켓플레이스로 돌아가기</a>
+    
+    <header class="header">
+      <h1>AMEVA Architecture</h1>
+      <p>클라우드 스트리밍과 로컬-퍼스트(Local-First) 패러다임의 결합에 대한 기술적 고찰</p>
+    </header>
+
+    <div class="section">
+      <h2>1. System Architecture Overview</h2>
+      <p>AMEVA 워크스테이션은 기존 데스크톱 애플리케이션의 한계(무거운 설치, 동기화 지연, 자원 점유)를 극복하기 위해 설계되었습니다. 브라우저 내장 렌더링 엔진과 클라우드 플러그인 스트리밍 방식을 결합하여 <strong>Zero-Install</strong> 환경을 구현했습니다.</p>
+      
+      <div class="mermaid">
+      graph TD
+        subcase1[Local Client Layer]
+        A[Browser Runtime] --> B(Plugin Sandbox)
+        A --> C(OS Keychain API)
+        A --> D(Yjs Sync Engine)
+        end
+        
+        subcase2[Network Layer]
+        D <-->|WebRTC / WebSocket| E[Signaling Server]
+        B <-->|REST API| F[Cloud Application Server]
+        end
+        
+        subcase3[Storage Layer]
+        F --> G[(PostgreSQL)]
+        F --> H[(Redis Cache)]
+        end
+        
+        style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px
+        style D fill:#1e293b,stroke:#a855f7,stroke-width:2px
+        style C fill:#475569,stroke:#ef4444,stroke-width:2px
+      </div>
+      <p>보안이 중요한 API 키와 자격 증명은 서버에 전송하지 않고 <code>OS Keychain API</code>를 통해 데스크톱 물리 계층에 안전하게 암호화되어 보관됩니다.</p>
+    </div>
+
+    <div class="section">
+      <h2>2. Technical Trade-offs & Fallbacks</h2>
+      <p>복잡한 실시간 협업 시스템을 구축하며 직면한 기술적 한계와 이를 극복하기 위한 Workaround 전략을 표로 정리했습니다.</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>기술 스택 (Component)</th>
+            <th>구현 방식 (Approach)</th>
+            <th>기술적 한계 / Trade-off</th>
+            <th>Workaround & Fallback Strategy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>협업 엔진 (Yjs)</strong></td>
+            <td>CRDT 기반 P2P 상태 동기화</td>
+            <td>참여자가 늘어날수록 State Vector 용량이 기하급수적으로 커져 브라우저 메모리 압박이 생김.</td>
+            <td>정기적인 <code>Y.encodeStateAsUpdate()</code> 압축 스냅샷을 IndexedDB에 저장하고 불필요한 히스토리는 가비지 컬렉션 처리 (Local-First Fallback).</td>
+          </tr>
+          <tr>
+            <td><strong>자격 증명 (Keychain)</strong></td>
+            <td><code>keytar</code>를 통한 OS 네이티브 암호화</td>
+            <td>실시간 협업 시 타 유저와 자격 증명(OAuth 토큰 등)이 Yjs 룸을 타고 누출될 보안 위험 존재.</td>
+            <td><strong>[격리 아키텍처]</strong> Yjs Document 스키마에서 Credentials 필드를 렌더링 계층에서만 처리하도록 분리하여 네트워크 전송을 물리적으로 차단.</td>
+          </tr>
+          <tr>
+            <td><strong>스트리밍 뷰 (Iframe)</strong></td>
+            <td>플러그인 샌드박싱 로드</td>
+            <td>Iframe 내부와 외부 간의 이벤트 통신(Drag, Click)이 차단되어 드래그 앤 드롭 리사이징이 끊기는 문제.</td>
+            <td>리사이징(Drag) 이벤트 발생 순간 Iframe에 <code>pointer-events: none</code> 속성을 주입하고, Drop 시 복구하는 Workaround 적용.</td>
+          </tr>
+          <tr>
+            <td><strong>네트워크 (WebRTC)</strong></td>
+            <td>Mesh P2P Audio/Video</td>
+            <td>사내망/NAT 방화벽 뒤에 있는 유저 간의 P2P 직접 연결(STUN) 실패율 존재.</td>
+            <td>STUN 실패 시 자동으로 TURN 서버로 릴레이(Relay)하도록 Fallback 라우팅 로직 구현 (레이턴시는 소폭 증가하나 연결성 보장).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>3. As-Is vs To-Be 패러다임 전환</h2>
+      <p>AMEVA는 사용자의 행동 패턴을 어떻게 변화시키는지 증명합니다.</p>
+      <h3>[As-Is] 파편화된 컨텍스트</h3>
+      <p>작업을 위해 구글 지도, 네이버, 뽀모도로 타이머, 파일 탐색기 등 수많은 앱과 탭을 열어두어야 합니다. 이는 잦은 컨텍스트 스위칭(Context Switching)을 유발하여 생산성을 40% 이상 저하시킵니다.</p>
+      
+      <h3>[To-Be] Unified Workspace (단일 컨텍스트)</h3>
+      <p>AMEVA는 모든 도구를 워크스테이션 내의 <strong>모듈형 플러그인</strong>으로 흡수합니다. 사용자는 창을 벗어날 필요 없이 마켓플레이스에서 필요한 기능(예: PDF RAG, 칸반 보드)을 원클릭으로 활성화하고 배치할 수 있습니다.</p>
+    </div>
+  </div>
+</body>
+</html>
