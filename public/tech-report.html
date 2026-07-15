@@ -126,20 +126,20 @@
       
       <div class="mermaid">
       graph TD
-        subcase1[Local Client Layer]
-        A[Browser Runtime] --> B(Plugin Sandbox)
-        A --> C(OS Keychain API)
-        A --> D(Yjs Sync Engine)
+        subgraph subcase1[Local Client Layer]
+          A[Browser Runtime] --> B(Plugin Sandbox)
+          A --> C(OS Keychain API)
+          A --> D(Yjs Sync Engine)
         end
         
-        subcase2[Network Layer]
-        D <-->|WebRTC / WebSocket| E[Signaling Server]
-        B <-->|REST API| F[Cloud Application Server]
+        subgraph subcase2[Network Layer]
+          D <-->|WebRTC / WebSocket| E[Signaling Server]
+          B <-->|REST API| F[Cloud Application Server]
         end
         
-        subcase3[Storage Layer]
-        F --> G[(PostgreSQL)]
-        F --> H[(Redis Cache)]
+        subgraph subcase3[Storage Layer]
+          F --> G[(PostgreSQL)]
+          F --> H[(Redis Cache)]
         end
         
         style A fill:#1e293b,stroke:#3b82f6,stroke-width:2px
