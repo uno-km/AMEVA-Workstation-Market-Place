@@ -125,19 +125,19 @@
       <p>AMEVA 워크스테이션은 기존 데스크톱 애플리케이션의 한계(무거운 설치, 동기화 지연, 자원 점유)를 극복하기 위해 설계되었습니다. 브라우저 내장 렌더링 엔진과 클라우드 플러그인 스트리밍 방식을 결합하여 <strong>Zero-Install</strong> 환경을 구현했습니다.</p>
       
       <div class="mermaid">
-      graph TD
-        subgraph subcase1[Local Client Layer]
+      flowchart TD
+        subgraph Local Client Layer
           A[Browser Runtime] --> B(Plugin Sandbox)
           A --> C(OS Keychain API)
           A --> D(Yjs Sync Engine)
         end
         
-        subgraph subcase2[Network Layer]
+        subgraph Network Layer
           D <-->|WebRTC / WebSocket| E[Signaling Server]
           B <-->|REST API| F[Cloud Application Server]
         end
         
-        subgraph subcase3[Storage Layer]
+        subgraph Storage Layer
           F --> G[(PostgreSQL)]
           F --> H[(Redis Cache)]
         end
